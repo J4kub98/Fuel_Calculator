@@ -1,11 +1,11 @@
 {
   "name": "Fuel Calculator",
-  "short_name": "Fuel",
+  "short_name": "Fuel Calculator",
   "description": "Kalkulátor spotřeby paliva a cestovních nákladů",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1e293b",
-  "theme_color": "#2563eb",
+  "background_color": "#f4f4f5",
+  "theme_color": "#f4f4f5",
   "lang": "cs",
   "orientation": "portrait-primary",
   "icons": [

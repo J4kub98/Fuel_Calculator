@@ -346,8 +346,18 @@
     const isDark = localStorage.getItem('dark-mode') === 'true' || 
                   (localStorage.getItem('dark-mode') === null && window.matchMedia('(prefers-color-scheme: dark)').matches);
                   
+    // Aktualizuje theme-color meta tag podle aktuálního barevného schématu (status bar v PWA)
+    function updateThemeColor(dark) {
+      document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.remove());
+      const meta = document.createElement('meta');
+      meta.name = 'theme-color';
+      meta.content = dark ? '#121212' : '#f4f4f5';
+      document.head.appendChild(meta);
+    }
+
     if (isDark) {
       document.documentElement.classList.add('dark');
+      updateThemeColor(true);
       if (dmToggle && dmKnob) {
           dmToggle.checked = true;
           dmKnob.style.transform = 'translate(28px, 0)';
@@ -360,11 +370,13 @@
           if(e.target.checked) {
               document.documentElement.classList.add('dark');
               localStorage.setItem('dark-mode', 'true');
+              updateThemeColor(true);
               dmKnob.style.transform = 'translate(28px, 0)';
               dmKnob.style.background = 'var(--bg-card)';
           } else {
               document.documentElement.classList.remove('dark');
               localStorage.setItem('dark-mode', 'false');
+              updateThemeColor(false);
               dmKnob.style.transform = 'translate(0, 0)';
               dmKnob.style.background = 'var(--text-main)';
           }
