@@ -1,4 +1,4 @@
-// API handler pro seznam jízd — GET načte jízdy uživatele, POST uloží novou
+// Handler pro seznam jízd — GET načte jízdy uživatele, POST uloží novou
 const { randomUUID } = require('crypto');
 const { initDb, getDb } = require('../lib/db');
 const { tripSchema } = require('../lib/validation');
@@ -27,9 +27,6 @@ module.exports = async function handler(req, res) {
   }
 };
 
-/**
- * Načte všechny jízdy přihlášeného uživatele seřazené od nejnovější.
- */
 async function handleGet(req, res) {
   const session = getSession(req);
   if (!session) {
@@ -45,10 +42,6 @@ async function handleGet(req, res) {
   return res.status(200).json(result.rows);
 }
 
-/**
- * Uloží novou jízdu do databáze a vrátí ji s vygenerovaným UUID.
- * Validuje všechna pole přes tripSchema — neúplná nebo neplatná data → 400.
- */
 async function handlePost(req, res) {
   const session = getSession(req);
   if (!session) {

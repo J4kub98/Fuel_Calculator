@@ -1,4 +1,4 @@
-// API handler pro mazání konkrétní jízdy — ověřuje vlastnictví před smazáním
+// Handler pro mazání konkrétní jízdy — ověřuje vlastnictví před smazáním
 const { initDb, getDb } = require('../../lib/db');
 const { uuidSchema } = require('../../lib/validation');
 const { getSession } = require('../../lib/session');
@@ -35,7 +35,6 @@ module.exports = async function handler(req, res) {
 
     const db = getDb();
 
-    // Ověř vlastnictví — cizí jízdu nelze smazat
     const existing = await db.execute({
       sql: 'SELECT id FROM trips WHERE id = ? AND user_id = ?',
       args: [idParsed.data, session.userId],

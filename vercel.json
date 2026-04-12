@@ -1,4 +1,36 @@
 {
+  "version": 2,
+  "builds": [
+    {
+      "src": "backend/**/*.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/session",
+      "dest": "/backend/session.js"
+    },
+    {
+      "src": "/api/trips",
+      "dest": "/backend/trips.js"
+    },
+    {
+      "src": "/api/trips/([^/]+)",
+      "dest": "/backend/trips/[id].js?id=$1"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/",
+      "dest": "/public/index.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/public/$1"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

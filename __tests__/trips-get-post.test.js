@@ -18,7 +18,7 @@ jest.mock('../lib/rateLimit', () => ({
 
 const { getDb } = require('../lib/db');
 const { getSession } = require('../lib/session');
-const handler = require('../api/trips');
+const handler = require('../backend/trips');
 
 // Helper — mockuje Express-style res objekt
 function mockRes() {

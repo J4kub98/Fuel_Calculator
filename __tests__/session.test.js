@@ -6,7 +6,7 @@ jest.mock('../lib/rateLimit', () => ({
   checkRateLimit: jest.fn(() => ({ ok: true, remaining: 99, retryAfter: 0 })),
 }));
 
-const handler = require('../api/session');
+const handler = require('../backend/session');
 
 function mockRes() {
   const res = {};

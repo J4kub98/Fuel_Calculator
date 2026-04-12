@@ -4,6 +4,8 @@ A lightweight web app for tracking trip fuel costs, consumption, and monthly dri
 
 The repository is safe to keep public because sensitive values are loaded only from environment variables. API code can be public, secrets cannot.
 
+Serverless handlers are stored in `backend/` and routed to `/api/*` via `vercel.json`.
+
 ## Stack
 
 - Frontend: vanilla HTML/CSS/JS
