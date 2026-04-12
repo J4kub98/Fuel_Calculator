@@ -283,6 +283,9 @@
 
   // ── Delete trip ──
   async function handleDeleteTrip(id) {
+    const confirmed = confirm('Opravdu smazat tuto jízdu?');
+    if (!confirmed) return;
+
     try {
       await apiDeleteTrip(id);
       history = history.filter(t => t.id !== id);
