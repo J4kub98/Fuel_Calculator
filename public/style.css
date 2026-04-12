@@ -204,26 +204,7 @@
 
     @media (min-width: 768px) {
       .suggestion {
-        margin-top: 10px;
-        padding: 9px 16px;
-        border-radius: 12px;
-        border: 1px solid var(--border-soft);
-        background: var(--bg-card);
-        color: var(--text-main);
-        font-size: 0.9rem;
-        font-weight: 700;
         white-space: nowrap;
-        box-shadow: 0 4px 10px var(--shadow-color);
-      }
-
-      .suggestion strong {
-        color: var(--text-main);
-        letter-spacing: -0.01em;
-      }
-
-      .suggestion:hover {
-        transform: translateY(-1px);
-        background: var(--bg-btn-sec-hover);
       }
     }
 
