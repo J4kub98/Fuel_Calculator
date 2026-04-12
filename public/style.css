@@ -77,6 +77,11 @@
       gap: 24px;
     }
 
+    .container > div:first-child {
+      position: relative;
+      padding-right: 64px;
+    }
+
     .card {
       background: var(--bg-card);
       border: none;
@@ -548,12 +553,15 @@
     @media (max-width: 480px) {
       h1 { font-size: 1.6rem; }
       .card { padding: 20px; border-radius: 24px; }
+      .container > div:first-child {
+        padding-right: 52px;
+      }
       .settings-btn {
-        top: max(10px, env(safe-area-inset-top));
-        right: max(10px, env(safe-area-inset-right));
-        width: 42px;
-        height: 42px;
-        border-radius: 21px;
+        top: 2px;
+        right: 2px;
+        width: 40px;
+        height: 40px;
+        border-radius: 20px;
       }
       .field input,
       .month-filter select { font-size: 16px; } /* zabrání přiblížení na iOS */
@@ -644,8 +652,8 @@
     /* Settings Drawer Styles */
     .settings-btn {
       position: absolute;
-      top: 24px;
-      right: 24px;
+      top: 0;
+      right: 0;
       width: 48px;
       height: 48px;
       border-radius: 24px;
