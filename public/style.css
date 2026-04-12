@@ -79,7 +79,8 @@
 
     .container > div:first-child {
       position: relative;
-      padding-right: 64px;
+      padding-left: 56px;
+      padding-right: 56px;
     }
 
     .card {
@@ -554,14 +555,15 @@
       h1 { font-size: 1.6rem; }
       .card { padding: 20px; border-radius: 24px; }
       .container > div:first-child {
-        padding-right: 52px;
+        padding-left: 44px;
+        padding-right: 44px;
       }
       .settings-btn {
-        top: 2px;
-        right: 2px;
-        width: 40px;
-        height: 40px;
-        border-radius: 20px;
+        top: 6px;
+        right: 8px;
+        width: 34px;
+        height: 34px;
+        border-radius: 17px;
       }
       .field input,
       .month-filter select { font-size: 16px; } /* zabrání přiblížení na iOS */
@@ -652,11 +654,11 @@
     /* Settings Drawer Styles */
     .settings-btn {
       position: absolute;
-      top: 0;
-      right: 0;
-      width: 48px;
-      height: 48px;
-      border-radius: 24px;
+      top: 6px;
+      right: 8px;
+      width: 40px;
+      height: 40px;
+      border-radius: 20px;
       background: var(--bg-card);
       color: var(--text-main);
       border: 1px solid var(--border-soft);
