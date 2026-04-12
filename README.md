@@ -50,19 +50,6 @@ vercel link    # link to your Vercel project (first time only)
 npm run dev    # http://localhost:3000
 ```
 
-## Vercel deploy
-
-1. Push the repo to GitHub
-2. Import it at [vercel.com](https://vercel.com) → **Add New Project**
-3. In project **Settings → Environment Variables** add:
-
-| Variable | Value |
-|---|---|
-| `TURSO_DATABASE_URL` | `libsql://fuel-tool-<username>.aws-eu-west-1.turso.io` |
-| `TURSO_AUTH_TOKEN` | your Turso auth token |
-
-4. Redeploy — the database schema is created automatically on the first request.
-
 ## Tests
 
 ```bash
