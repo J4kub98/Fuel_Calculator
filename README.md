@@ -28,7 +28,6 @@ This prevents users from changing identity via devtools and accessing other user
 
 ```bash
 npm install
-npm install -g vercel
 ```
 
 ### 2. Create a Turso database
@@ -61,8 +60,13 @@ Never commit `.env` / `.env.local` files.
 ### 4. Run locally
 
 ```bash
-vercel link    # link to your Vercel project (first time only)
 npm run dev    # http://localhost:3000
+```
+
+### 5. Optional: run with Vercel runtime
+
+```bash
+npm run dev:vercel
 ```
 
 ## Tests
