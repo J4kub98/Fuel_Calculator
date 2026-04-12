@@ -1,75 +1,70 @@
-# Fuel Tool — Kalkulátor spotřeby paliva
+# Fuel Tool — Fuel Cost Calculator
 
-Fuel Cost Calculator is a lightweight web app for tracking trip fuel usage, costs, and monthly driving statistics.
-
-Sleduj náklady a kilometry každé jízdy. Webová aplikace s persistentní databází, anonymní identifikací uživatelů a Vercel deployem.
+A lightweight web app for tracking trip fuel costs, consumption, and monthly driving statistics. Each user is identified by an anonymous UUID stored in localStorage — no login required.
 
 ## Stack
 
 - Frontend: vanilla HTML/CSS/JS
 - Backend: Vercel Serverless Functions (Node.js)
-- Databáze: [Turso](https://turso.tech) (libSQL / SQLite)
+- Database: [Turso](https://turso.tech) (libSQL / SQLite-compatible)
 
-## Jak to funguje
+## How it works
 
-Při první návštěvě se vygeneruje anonymní UUID a uloží do localStorage. Každý request posílá toto UUID — data jsou oddělená per-zařízení bez nutnosti přihlašování.
+On first visit a UUID v4 is generated and stored in localStorage as `fuel_user_id`. Every API request includes this ID — data is isolated per device without any authentication.
 
-## Lokální vývoj
+## Local development
 
-### 1. Závislosti
+### 1. Install dependencies
 
 ```bash
 npm install
 npm install -g vercel
 ```
 
-### 2. Vytvoř Turso databázi
+### 2. Create a Turso database
 
 ```bash
-# Instalace Turso CLI
+# Install Turso CLI (Mac/Linux)
 curl -sSfL https://get.tur.so/install.sh | bash
 
-# Přihlášení a vytvoření DB
+# Sign up and create the database
 turso auth signup
 turso db create fuel-tool
-turso db show fuel-tool           # zkopíruj URL
-turso db tokens create fuel-tool  # zkopíruj token
+turso db show fuel-tool            # copy the URL
+turso db tokens create fuel-tool   # copy the auth token
 ```
 
-### 3. Nastav env proměnné
+### 3. Set environment variables
 
-Zkopíruj `.env.example` → `.env.local` a doplň hodnoty:
+Create a `.env.local` file in the project root:
 
 ```
-TURSO_DATABASE_URL=libsql://fuel-tool-<username>.turso.io
-TURSO_AUTH_TOKEN=<token>
+TURSO_DATABASE_URL=libsql://fuel-tool-<your-username>.aws-eu-west-1.turso.io
+TURSO_AUTH_TOKEN=<your-auth-token>
 ```
 
-### 4. Spusť lokálně
+### 4. Run locally
 
 ```bash
-vercel link   # propoj s Vercel projektem (jen poprvé)
-npm run dev   # http://localhost:3000
+vercel link    # link to your Vercel project (first time only)
+npm run dev    # http://localhost:3000
 ```
 
 ## Vercel deploy
 
-1. Pushni na GitHub
-2. Importuj repozitář na [vercel.com](https://vercel.com)
-3. Přidej env proměnné v nastavení projektu:
-   - `TURSO_DATABASE_URL`
-   - `TURSO_AUTH_TOKEN`
-4. Deploy
+1. Push the repo to GitHub
+2. Import it at [vercel.com](https://vercel.com) → **Add New Project**
+3. In project **Settings → Environment Variables** add:
 
-## Testy
+| Variable | Value |
+|---|---|
+| `TURSO_DATABASE_URL` | `libsql://fuel-tool-<username>.aws-eu-west-1.turso.io` |
+| `TURSO_AUTH_TOKEN` | your Turso auth token |
+
+4. Redeploy — the database schema is created automatically on the first request.
+
+## Tests
 
 ```bash
 npm test
 ```
-
-## Environment variables
-
-| Proměnná | Popis |
-|---|---|
-| `TURSO_DATABASE_URL` | URL Turso databáze (formát: `libsql://...`) |
-| `TURSO_AUTH_TOKEN` | Auth token pro přístup k databázi |
