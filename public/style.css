@@ -473,6 +473,22 @@
 
     .hi-delete:hover { background: var(--bg-red); color: var(--accent-red); }
 
+    .history-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    #btnClearAll {
+      padding: 8px 14px;
+      font-size: 0.78rem;
+      white-space: nowrap;
+      line-height: 1;
+    }
+
     .empty-state {
       text-align: center;
       color: var(--text-mut);
@@ -532,11 +548,51 @@
     @media (max-width: 480px) {
       h1 { font-size: 1.6rem; }
       .card { padding: 20px; border-radius: 24px; }
-      .settings-btn { top: 16px; right: 16px; }
+      .settings-btn {
+        top: max(10px, env(safe-area-inset-top));
+        right: max(10px, env(safe-area-inset-right));
+        width: 42px;
+        height: 42px;
+        border-radius: 21px;
+      }
       .field input,
       .month-filter select { font-size: 16px; } /* zabrání přiblížení na iOS */
       .stat-box { padding: 16px 12px; }
       .stat-box .s-value { font-size: 1.3rem; }
+      .history-list {
+        padding-right: 0;
+        max-height: none;
+      }
+      .history-item {
+        display: grid;
+        grid-template-columns: 56px 1fr auto;
+        grid-template-areas:
+          "date body delete"
+          "date cost delete";
+        gap: 8px 12px;
+        align-items: center;
+        padding: 14px;
+      }
+      .hi-date {
+        grid-area: date;
+        min-width: 0;
+      }
+      .hi-body { grid-area: body; }
+      .hi-cost {
+        grid-area: cost;
+        text-align: left;
+      }
+      .hi-delete {
+        grid-area: delete;
+        justify-self: end;
+      }
+      .hi-km { font-size: 1rem; }
+      .hi-meta {
+        font-size: 0.95rem;
+        line-height: 1.35;
+      }
+      .hi-cost .amount { font-size: 1.25rem; }
+      .hi-cost .liters { font-size: 0.85rem; }
       .toast {
         left: 16px;
         right: 16px;
@@ -555,11 +611,16 @@
       .result-row { grid-template-columns: 1fr; }
       .result-box.highlight { grid-column: auto; order: 0; transform: none; }
       .history-item {
-        flex-wrap: wrap;
-        gap: 12px;
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "date"
+          "body"
+          "cost"
+          "delete";
+        gap: 10px;
       }
-      .hi-date { min-width: auto; text-align: left; }
-      .hi-cost { text-align: left; width: 100%; }
+      .hi-date { text-align: left; }
+      .hi-delete { justify-self: start; }
     }
   
     #importIdInput {
