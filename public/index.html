@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kalkulátor spotřeby paliva</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #f8fafc;
+      margin-bottom: 6px;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #64748b;
+      font-size: 0.85rem;
+      margin-bottom: 28px;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .card {
+      background: #1e2130;
+      border: 1px solid #2d3348;
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .card-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #64748b;
+      margin-bottom: 18px;
+    }
+
+    /* ── Inputs ── */
+    .inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    @media (max-width: 700px) {
+      .inputs-grid { grid-template-columns: 1fr; }
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.78rem;
+      color: #94a3b8;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    .field .input-wrap {
+      position: relative;
+    }
+
+    .field input {
+      width: 100%;
+      background: #131622;
+      border: 1.5px solid #2d3348;
+      border-radius: 10px;
+      padding: 11px 44px 11px 14px;
+      color: #f1f5f9;
+      font-size: 1rem;
+      font-weight: 600;
+      outline: none;
+      transition: border-color 0.2s;
+      -moz-appearance: textfield;
+    }
+
+    .field input::-webkit-outer-spin-button,
+    .field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    .field input:focus { border-color: #6366f1; }
+
+    .field .unit {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.72rem;
+      color: #475569;
+      font-weight: 600;
+      pointer-events: none;
+    }
+
+    /* price suggestion chip */
+    .suggestion {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 6px;
+      padding: 4px 10px;
+      background: #1e3a5f;
+      border: 1px solid #2563eb44;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      color: #60a5fa;
+      cursor: pointer;
+      transition: background 0.15s;
+      user-select: none;
+    }
+
+    .suggestion:hover { background: #1d4ed855; }
+
+    /* ── Result row ── */
+    .result-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .result-box {
+      background: #131622;
+      border: 1px solid #2d3348;
+      border-radius: 12px;
+      padding: 14px 18px;
+      text-align: center;
+    }
+
+    .result-box .r-label {
+      font-size: 0.7rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 4px;
+    }
+
+    .result-box .r-value {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #a5b4fc;
+    }
+
+    .result-box .r-value.cost { color: #34d399; }
+
+    .result-box .r-unit {
+      font-size: 0.7rem;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    /* ── Buttons ── */
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      flex: 1;
+      padding: 13px;
+      background: #6366f1;
+      color: #fff;
+    }
+
+    .btn-primary:hover { background: #4f46e5; }
+    .btn-primary:active { transform: scale(0.98); }
+
+    .btn-secondary {
+      padding: 13px 16px;
+      background: #1e3a5f;
+      color: #60a5fa;
+      border: 1px solid #2563eb44;
+    }
+
+    .btn-secondary:hover { background: #1d4ed855; }
+
+    /* ── Monthly stats ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    @media (max-width: 700px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    .stat-box {
+      background: #131622;
+      border: 1px solid #2d3348;
+      border-radius: 12px;
+      padding: 14px 12px;
+      text-align: center;
+    }
+
+    .stat-box .s-emoji { font-size: 1.3rem; margin-bottom: 4px; }
+
+    .stat-box .s-value {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: #f1f5f9;
+    }
+
+    .stat-box .s-label {
+      font-size: 0.68rem;
+      color: #64748b;
+      margin-top: 3px;
+    }
+
+    /* month filter */
+    .stats-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .month-filter {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .month-filter label { font-size: 0.78rem; color: #94a3b8; }
+
+    .month-filter select {
+      min-width: 180px;
+      background: #131622;
+      border: 1.5px solid #2d3348;
+      border-radius: 8px;
+      color: #f1f5f9;
+      padding: 8px 34px 8px 10px;
+      font-size: 0.85rem;
+      outline: none;
+      appearance: none;
+      background-image: linear-gradient(45deg, transparent 50%, #94a3b8 50%), linear-gradient(135deg, #94a3b8 50%, transparent 50%);
+      background-position: calc(100% - 16px) calc(50% - 3px), calc(100% - 11px) calc(50% - 3px);
+      background-size: 5px 5px, 5px 5px;
+      background-repeat: no-repeat;
+    }
+
+    /* ── History ── */
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: min(52vh, 420px);
+      overflow-y: auto;
+    }
+
+    .history-list::-webkit-scrollbar { width: 5px; }
+    .history-list::-webkit-scrollbar-track { background: transparent; }
+    .history-list::-webkit-scrollbar-thumb { background: #2d3348; border-radius: 99px; }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #131622;
+      border: 1px solid #2d3348;
+      border-radius: 10px;
+      padding: 12px 14px;
+      transition: border-color 0.15s;
+    }
+
+    .history-item:hover { border-color: #3d4460; }
+
+    .hi-date {
+      min-width: 60px;
+      font-size: 0.72rem;
+      color: #64748b;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    .hi-date .day { font-size: 1.1rem; font-weight: 800; color: #94a3b8; }
+
+    .hi-body { flex: 1; }
+
+    .hi-km {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+
+    .hi-meta {
+      font-size: 0.72rem;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    .hi-cost {
+      text-align: right;
+    }
+
+    .hi-cost .amount {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #34d399;
+    }
+
+    .hi-cost .liters {
+      font-size: 0.7rem;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    .hi-delete {
+      background: none;
+      color: #ef444444;
+      font-size: 1.1rem;
+      padding: 4px 6px;
+      border-radius: 6px;
+      transition: color 0.15s;
+    }
+
+    .hi-delete:hover { color: #ef4444; }
+
+    .empty-state {
+      text-align: center;
+      color: #475569;
+      font-size: 0.85rem;
+      padding: 32px 0;
+    }
+
+    .empty-state .big { font-size: 2.5rem; margin-bottom: 8px; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%) translateY(60px);
+      background: #22c55e;
+      color: #052e16;
+      padding: 10px 20px;
+      border-radius: 99px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      box-shadow: 0 4px 20px #22c55e44;
+      transition: transform 0.3s ease;
+      z-index: 999;
+      pointer-events: none;
+    }
+
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 768px) {
+      body { padding: 20px 14px; }
+      .card { padding: 20px; }
+    }
+
+    @media (max-width: 640px) {
+      .result-row { grid-template-columns: 1fr; }
+      .btn-row { flex-direction: column; }
+      .btn-primary,
+      .btn-secondary { width: 100%; }
+      .stats-head { flex-direction: column; align-items: stretch; }
+      .month-filter { width: 100%; }
+    }
+
+    @media (max-width: 480px) {
+      h1 { font-size: 1.35rem; }
+      .subtitle { font-size: 0.8rem; margin-bottom: 20px; }
+      .field input,
+      .month-filter select { font-size: 16px; }
+      .month-filter {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .month-filter select,
+      .month-filter button { width: 100%; }
+      .toast {
+        left: 12px;
+        right: 12px;
+        transform: translateY(60px);
+        text-align: center;
+      }
+      .toast.show { transform: translateY(0); }
+    }
+
+    @media (max-width: 360px) {
+      body { padding: 16px 10px; }
+      .card { padding: 16px; border-radius: 14px; }
+      .stats-grid { grid-template-columns: 1fr; }
+      .history-item {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .hi-date { min-width: auto; text-align: left; }
+      .hi-cost { text-align: left; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div>
+    <h1>⛽ Kalkulátor paliva</h1>
+    <p class="subtitle">Sleduj náklady a kilometry každé jízdy</p>
+  </div>
+
+  <!-- CALCULATOR CARD -->
+  <div class="card">
+    <div class="card-title">Nová jízda</div>
+
+    <div class="inputs-grid">
+      <div class="field">
+        <label>Vzdálenost</label>
+        <div class="input-wrap">
+          <input type="number" id="distance" placeholder="0" step="0.1" min="0" />
+          <span class="unit">km</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Spotřeba</label>
+        <div class="input-wrap">
+          <input type="number" id="consumption" placeholder="0.0" step="0.1" min="0" value="5.9" />
+          <span class="unit">l/100</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Cena paliva</label>
+        <div class="input-wrap">
+          <input type="number" id="price" placeholder="0.00" step="0.01" min="0" />
+          <span class="unit">Kč/l</span>
+        </div>
+        <div id="priceSuggestion" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div class="result-row">
+      <div class="result-box">
+        <div class="r-label">Spotřebováno</div>
+        <div class="r-value" id="resultLiters">—</div>
+        <div class="r-unit">litrů</div>
+      </div>
+      <div class="result-box">
+        <div class="r-label">Náklady</div>
+        <div class="r-value cost" id="resultCost">—</div>
+        <div class="r-unit">korun</div>
+      </div>
+      <div class="result-box">
+        <div class="r-label">Cena / km</div>
+        <div class="r-value" id="resultPerKm">—</div>
+        <div class="r-unit">Kč/km</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" id="btnCalc">🧮 Spočítat</button>
+      <button class="btn-primary" id="btnSave">💾 Uložit jízdu</button>
+    </div>
+  </div>
+
+  <!-- STATS CARD -->
+  <div class="card">
+    <div class="stats-head">
+      <div class="card-title" style="margin-bottom:0">Statistiky</div>
+      <div class="month-filter">
+        <label>Měsíc:</label>
+        <select id="monthSelect"></select>
+        <button class="btn-secondary" id="btnResetFilter" style="padding:8px 12px; font-size:0.75rem;">Vše</button>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="s-emoji">🛣️</div>
+        <div class="s-value" id="statKm">0</div>
+        <div class="s-label">km celkem</div>
+      </div>
+      <div class="stat-box">
+        <div class="s-emoji">⛽</div>
+        <div class="s-value" id="statLiters">0</div>
+        <div class="s-label">litrů celkem</div>
+      </div>
+      <div class="stat-box">
+        <div class="s-emoji">💸</div>
+        <div class="s-value" id="statCost">0</div>
+        <div class="s-label">Kč celkem</div>
+      </div>
+      <div class="stat-box">
+        <div class="s-emoji">🚗</div>
+        <div class="s-value" id="statTrips">0</div>
+        <div class="s-label">jízd</div>
+      </div>
+      <div class="stat-box">
+        <div class="s-emoji">📍</div>
+        <div class="s-value" id="statAvgKm">0</div>
+        <div class="s-label">průměr km/jízda</div>
+      </div>
+      <div class="stat-box">
+        <div class="s-emoji">💰</div>
+        <div class="s-value" id="statAvgCost">0</div>
+        <div class="s-label">průměr Kč/jízda</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY CARD -->
+  <div class="card">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+      <div class="card-title" style="margin-bottom:0">Historie jízd</div>
+      <button class="btn-secondary" id="btnClearAll" style="padding:6px 12px; font-size:0.75rem;">🗑️ Vše smazat</button>
+    </div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── Data helpers ──
+  const STORAGE_KEY = 'fuel_history_v1';
+
+  function loadHistory() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch { return []; }
+  }
+
+  function saveHistory(data) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  let history = loadHistory();
+
+  // ── Price suggestion ──
+  function getLastPrice() {
+    if (!history.length) return null;
+    return history[history.length - 1].price;
+  }
+
+  function renderSuggestion() {
+    const lastPrice = getLastPrice();
+    const el = document.getElementById('priceSuggestion');
+    const priceInput = document.getElementById('price');
+
+    if (lastPrice !== null && priceInput.value === '') {
+      el.style.display = 'block';
+      el.innerHTML = `<span class="suggestion" id="suggChip">⚡ Minule: <strong>${lastPrice.toFixed(2)} Kč</strong> — použít?</span>`;
+      document.getElementById('suggChip').onclick = () => {
+        priceInput.value = lastPrice.toFixed(2);
+        el.style.display = 'none';
+        calculate();
+      };
+    } else {
+      el.style.display = 'none';
+    }
+  }
+
+  // ── Calculate ──
+  function calculate() {
+    const dist = parseFloat(document.getElementById('distance').value) || 0;
+    const cons = parseFloat(document.getElementById('consumption').value) || 0;
+    const price = parseFloat(document.getElementById('price').value) || 0;
+
+    if (dist <= 0 || cons <= 0 || price <= 0) {
+      document.getElementById('resultLiters').textContent = '—';
+      document.getElementById('resultCost').textContent = '—';
+      document.getElementById('resultPerKm').textContent = '—';
+      return null;
+    }
+
+    const liters = (dist * cons) / 100;
+    const cost = liters * price;
+    const perKm = cost / dist;
+
+    document.getElementById('resultLiters').textContent = liters.toFixed(3);
+    document.getElementById('resultCost').textContent = cost.toFixed(2);
+    document.getElementById('resultPerKm').textContent = perKm.toFixed(2);
+
+    return { liters, cost, perKm };
+  }
+
+  // ── Save trip ──
+  function saveTrip() {
+    const dist = parseFloat(document.getElementById('distance').value);
+    const cons = parseFloat(document.getElementById('consumption').value);
+    const price = parseFloat(document.getElementById('price').value);
+
+    if (!dist || !cons || !price) {
+      showToast('⚠️ Vyplň všechna pole!', '#f59e0b', '#451a03');
+      return;
+    }
+
+    const result = calculate();
+    if (!result) return;
+
+    const now = new Date();
+    const trip = {
+      id: Date.now(),
+      date: now.toISOString(),
+      distance: dist,
+      consumption: cons,
+      price: price,
+      liters: result.liters,
+      cost: result.cost,
+    };
+
+    history.push(trip);
+    saveHistory(history);
+
+    document.getElementById('distance').value = '';
+    document.getElementById('resultLiters').textContent = '—';
+    document.getElementById('resultCost').textContent = '—';
+    document.getElementById('resultPerKm').textContent = '—';
+
+    renderSuggestion();
+    renderHistory();
+    renderStats();
+    showToast('✅ Jízda uložena!');
+  }
+
+  // ── Toast ──
+  function showToast(msg, bg = '#22c55e', color = '#052e16') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.background = bg;
+    t.style.color = color;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // ── Month selector ──
+  function buildMonthSelector() {
+    const months = {};
+    history.forEach(t => {
+      const d = new Date(t.date);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      months[key] = (months[key] || 0) + 1;
+    });
+
+    const keys = Object.keys(months).sort().reverse();
+    const sel = document.getElementById('monthSelect');
+    const current = sel.value;
+    sel.innerHTML = `<option value="all">Všechny měsíce (${history.length})</option>`;
+
+    keys.forEach(k => {
+      const [y, m] = k.split('-');
+      const label = new Date(y, m - 1).toLocaleDateString('cs-CZ', { month: 'long', year: 'numeric' });
+      const opt = document.createElement('option');
+      opt.value = k;
+      opt.textContent = `${label} (${months[k]})`;
+      sel.appendChild(opt);
+    });
+
+    if (current && [...sel.options].some(o => o.value === current)) {
+      sel.value = current;
+    } else if (keys.length) {
+      sel.value = keys[0]; // default to latest month
+    }
+  }
+
+  function getFilteredHistory() {
+    const sel = document.getElementById('monthSelect').value;
+    if (sel === 'all') return history;
+    return history.filter(t => {
+      const d = new Date(t.date);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      return key === sel;
+    });
+  }
+
+  // ── Render stats ──
+  function renderStats() {
+    const filtered = getFilteredHistory();
+    const totalKm = filtered.reduce((s, t) => s + t.distance, 0);
+    const totalL = filtered.reduce((s, t) => s + t.liters, 0);
+    const totalCost = filtered.reduce((s, t) => s + t.cost, 0);
+    const trips = filtered.length;
+
+    document.getElementById('statKm').textContent = totalKm.toFixed(1);
+    document.getElementById('statLiters').textContent = totalL.toFixed(2);
+    document.getElementById('statCost').textContent = Math.round(totalCost);
+    document.getElementById('statTrips').textContent = trips;
+    document.getElementById('statAvgKm').textContent = trips ? (totalKm / trips).toFixed(1) : '0';
+    document.getElementById('statAvgCost').textContent = trips ? Math.round(totalCost / trips) : '0';
+  }
+
+  // ── Render history ──
+  function renderHistory() {
+    buildMonthSelector();
+    const filtered = getFilteredHistory().slice().reverse();
+    const el = document.getElementById('historyList');
+
+    if (!filtered.length) {
+      el.innerHTML = `<div class="empty-state"><div class="big">🚗</div>Žádné jízdy v tomto období</div>`;
+      return;
+    }
+
+    el.innerHTML = filtered.map(trip => {
+      const d = new Date(trip.date);
+      const day = d.getDate();
+      const monthShort = d.toLocaleDateString('cs-CZ', { month: 'short' });
+      const time = d.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+
+      return `
+        <div class="history-item">
+          <div class="hi-date">
+            <div class="day">${day}.</div>
+            <div>${monthShort}</div>
+            <div>${time}</div>
+          </div>
+          <div class="hi-body">
+            <div class="hi-km">${trip.distance.toFixed(1)} km</div>
+            <div class="hi-meta">${trip.consumption} l/100 &nbsp;·&nbsp; ${trip.price.toFixed(2)} Kč/l</div>
+          </div>
+          <div class="hi-cost">
+            <div class="amount">${trip.cost.toFixed(2)} Kč</div>
+            <div class="liters">${trip.liters.toFixed(3)} l</div>
+          </div>
+          <button class="hi-delete" onclick="deleteTrip(${trip.id})" title="Smazat">✕</button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ── Delete trip ──
+  function deleteTrip(id) {
+    history = history.filter(t => t.id !== id);
+    saveHistory(history);
+    renderHistory();
+    renderStats();
+    renderSuggestion();
+    showToast('🗑️ Jízda smazána', '#ef4444', '#450a0a');
+  }
+
+  // ── Clear all ──
+  document.getElementById('btnClearAll').onclick = () => {
+    if (!history.length) return;
+    if (confirm('Opravdu smazat celou historii?')) {
+      history = [];
+      saveHistory(history);
+      renderHistory();
+      renderStats();
+      renderSuggestion();
+      showToast('🗑️ Historie smazána', '#ef4444', '#450a0a');
+    }
+  };
+
+  // ── Event listeners ──
+  document.getElementById('btnCalc').onclick = calculate;
+  document.getElementById('btnSave').onclick = saveTrip;
+
+  ['distance', 'consumption', 'price'].forEach(id => {
+    document.getElementById(id).addEventListener('input', calculate);
+  });
+
+  document.getElementById('price').addEventListener('focus', renderSuggestion);
+
+  document.getElementById('monthSelect').addEventListener('change', () => {
+    renderHistory();
+    renderStats();
+  });
+
+  document.getElementById('btnResetFilter').addEventListener('click', () => {
+    const monthSelect = document.getElementById('monthSelect');
+    monthSelect.value = 'all';
+    renderHistory();
+    renderStats();
+  });
+
+  // ── Init ──
+  renderSuggestion();
+  renderHistory();
+  renderStats();
+</script>
+</body>
+</html>
