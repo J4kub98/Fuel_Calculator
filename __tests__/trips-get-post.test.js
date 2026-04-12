@@ -4,7 +4,20 @@ jest.mock('../lib/db', () => ({
   getDb: jest.fn(),
 }));
 
+jest.mock('../lib/session', () => ({
+  getSession: jest.fn(),
+}));
+
+jest.mock('../lib/http', () => ({
+  setSecurityHeaders: jest.fn(),
+}));
+
+jest.mock('../lib/rateLimit', () => ({
+  checkRateLimit: jest.fn(() => ({ ok: true, remaining: 99, retryAfter: 0 })),
+}));
+
 const { getDb } = require('../lib/db');
+const { getSession } = require('../lib/session');
 const handler = require('../api/trips');
 
 // Helper — mockuje Express-style res objekt
@@ -12,13 +25,13 @@ function mockRes() {
   const res = {};
   res.status = jest.fn(() => res);
   res.json = jest.fn(() => res);
+  res.setHeader = jest.fn(() => res);
   return res;
 }
 
 const VALID_USER = '550e8400-e29b-41d4-a716-446655440000';
 
 const VALID_BODY = {
-  userId: VALID_USER,
   date: '2026-04-12T10:00:00.000Z',
   distance: 150,
   consumption: 5.9,
@@ -30,27 +43,21 @@ const VALID_BODY = {
 beforeEach(() => jest.clearAllMocks());
 
 describe('GET /api/trips', () => {
-  it('vrátí 400 pro neplatné userId', async () => {
-    const req = { method: 'GET', query: { userId: 'not-a-uuid' } };
-    const res = mockRes();
-    await handler(req, res);
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Neplatné userId' });
-  });
-
-  it('vrátí 400 pro chybějící userId', async () => {
+  it('vrátí 401 bez session', async () => {
+    getSession.mockReturnValue(null);
     const req = { method: 'GET', query: {} };
     const res = mockRes();
     await handler(req, res);
-    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.status).toHaveBeenCalledWith(401);
   });
 
-  it('vrátí seznam jízd pro platné userId', async () => {
+  it('vrátí seznam jízd pro validní session', async () => {
+    getSession.mockReturnValue({ userId: VALID_USER });
     const rows = [{ id: 'trip-1', user_id: VALID_USER, distance: 100 }];
     const mockExecute = jest.fn().mockResolvedValue({ rows });
     getDb.mockReturnValue({ execute: mockExecute });
 
-    const req = { method: 'GET', query: { userId: VALID_USER } };
+    const req = { method: 'GET', query: {} };
     const res = mockRes();
     await handler(req, res);
 
@@ -66,14 +73,24 @@ describe('GET /api/trips', () => {
 });
 
 describe('POST /api/trips', () => {
+  it('vrátí 401 bez session', async () => {
+    getSession.mockReturnValue(null);
+    const req = { method: 'POST', body: VALID_BODY };
+    const res = mockRes();
+    await handler(req, res);
+    expect(res.status).toHaveBeenCalledWith(401);
+  });
+
   it('vrátí 400 pro neúplná data', async () => {
-    const req = { method: 'POST', body: { userId: VALID_USER } };
+    getSession.mockReturnValue({ userId: VALID_USER });
+    const req = { method: 'POST', body: {} };
     const res = mockRes();
     await handler(req, res);
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
   it('vrátí 400 pro zápornou vzdálenost', async () => {
+    getSession.mockReturnValue({ userId: VALID_USER });
     const req = { method: 'POST', body: { ...VALID_BODY, distance: -10 } };
     const res = mockRes();
     await handler(req, res);
@@ -81,6 +98,7 @@ describe('POST /api/trips', () => {
   });
 
   it('uloží jízdu a vrátí 201 s vygenerovaným ID', async () => {
+    getSession.mockReturnValue({ userId: VALID_USER });
     const mockExecute = jest.fn().mockResolvedValue({});
     getDb.mockReturnValue({ execute: mockExecute });
 
@@ -99,6 +117,7 @@ describe('POST /api/trips', () => {
     expect(mockExecute).toHaveBeenCalledWith(
       expect.objectContaining({
         sql: expect.stringContaining('INSERT INTO trips'),
+        args: expect.arrayContaining([VALID_USER]),
       })
     );
   });

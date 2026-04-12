@@ -25,7 +25,6 @@ describe('uuidSchema', () => {
 
 describe('tripSchema', () => {
   const valid = {
-    userId: '550e8400-e29b-41d4-a716-446655440000',
     date: '2026-04-12T10:00:00.000Z',
     distance: 150,
     consumption: 5.9,

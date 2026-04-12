@@ -1,22 +1,39 @@
-// ── Anonymní identifikace uživatele ──
-  // UUID v4 uložené v localStorage — každé zařízení/prohlížeč má unikátní ID
-  const USER_ID_KEY = 'fuel_user_id';
+// ── Session bootstrap ──
+  const LEGACY_USER_ID_KEY = 'fuel_user_id';
+  let sessionUserId = null;
 
-  function getUserId() {
-    let id = localStorage.getItem(USER_ID_KEY);
-    if (!id) {
-      id = crypto.randomUUID();
-      localStorage.setItem(USER_ID_KEY, id);
+  async function ensureSession() {
+    const legacyUserId = localStorage.getItem(LEGACY_USER_ID_KEY);
+    const payload = {};
+
+    if (legacyUserId) {
+      payload.legacyUserId = legacyUserId;
     }
-    return id;
+
+    const res = await fetch('/api/session', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      throw new Error('Nepodařilo se vytvořit bezpečnou relaci');
+    }
+
+    const data = await res.json();
+    sessionUserId = data.userId;
+
+    if (legacyUserId) {
+      localStorage.removeItem(LEGACY_USER_ID_KEY);
+    }
   }
 
   let history = [];
 
   // ── API helpers ──
   async function fetchTrips() {
-    const userId = getUserId();
-    const res = await fetch(`/api/trips?userId=${userId}`);
+    const res = await fetch('/api/trips', { credentials: 'same-origin' });
     if (!res.ok) throw new Error('Nepodařilo se načíst jízdy');
     const data = await res.json();
     // Odstraní user_id z odpovědi — frontend ho nepotřebuje
@@ -26,17 +43,18 @@
   async function postTrip(trip) {
     const res = await fetch('/api/trips', {
       method: 'POST',
+      credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...trip, userId: getUserId() }),
+      body: JSON.stringify(trip),
     });
     if (!res.ok) throw new Error('Nepodařilo se uložit jízdu');
     return res.json();
   }
 
   async function apiDeleteTrip(id) {
-    const userId = getUserId();
-    const res = await fetch(`/api/trips/${id}?userId=${userId}`, {
+    const res = await fetch(`/api/trips/${id}`, {
       method: 'DELETE',
+      credentials: 'same-origin',
     });
     if (!res.ok) throw new Error('Nepodařilo se smazat jízdu');
   }
@@ -121,8 +139,7 @@
         cost:        result.cost,
       });
 
-      const { userId, ...trip } = saved;
-      history.push(trip);
+      history.push(saved);
 
       document.getElementById('distance').value           = '';
       document.getElementById('resultLiters').textContent = '—';
@@ -238,10 +255,14 @@
             <div class="amount">${trip.cost.toFixed(2)} Kč</div>
             <div class="liters">${trip.liters.toFixed(3)} l</div>
           </div>
-          <button class="hi-delete" onclick="handleDeleteTrip('${trip.id}')" title="Smazat">✕</button>
+          <button class="hi-delete" data-trip-id="${trip.id}" title="Smazat">✕</button>
         </div>
       `;
     }).join('');
+
+    el.querySelectorAll('.hi-delete').forEach((btn) => {
+      btn.addEventListener('click', () => handleDeleteTrip(btn.dataset.tripId));
+    });
   }
 
   // ── Delete trip ──
@@ -352,49 +373,27 @@
     // Escape zavře drawer
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSettings(); });
 
-    // Zobraz aktuální UUID
-    document.getElementById('deviceIdDisplay').textContent = getUserId();
+    // Zobraz aktuální serverovou identitu session
+    document.getElementById('deviceIdDisplay').textContent = sessionUserId || '—';
 
     // Kopírování ID do schránky
     document.getElementById('btnCopyId').onclick = async () => {
-      await navigator.clipboard.writeText(getUserId());
-      showToast(' ID zkopírováno!');
-    };
-
-    // Import ID z jiného zařízení — přepíše UUID v localStorage a přenačte data
-    document.getElementById('btnImportId').onclick = async () => {
-      const input = document.getElementById('importIdInput').value.trim();
-      const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-      if (!UUID_REGEX.test(input)) {
-        showToast(' Neplatné ID — zkopíruj ho přesně', '#f59e0b', '#451a03');
+      if (!sessionUserId) {
+        showToast(' ID není zatím dostupné', '#f59e0b', '#451a03');
         return;
       }
-      if (!confirm('Přepnout na jiné zařízení? Data tohoto zařízení zůstanou v databázi, ale přestaneš je vidět.')) return;
-
-      localStorage.setItem(USER_ID_KEY, input);
-      document.getElementById('deviceIdDisplay').textContent = input;
-      document.getElementById('importIdInput').value = '';
-      closeSettings();
-
-      try {
-        await fetchTrips();
-      } catch {
-        showToast(' Nepodařilo se načíst jízdy', '#f59e0b', '#451a03');
-      }
-      renderSuggestion();
-      renderHistory();
-      renderStats();
-      showToast(' Přepnuto na jiné zařízení!');
+      await navigator.clipboard.writeText(sessionUserId);
+      showToast(' ID zkopírováno!');
     };
   }
 
   // ── Init ──
   async function init() {
     try {
+      await ensureSession();
       await fetchTrips();
     } catch {
-      showToast(' Nepodařilo se načíst jízdy', '#f59e0b', '#451a03');
+      showToast(' Nepodařilo se inicializovat aplikaci', '#f59e0b', '#451a03');
     }
     renderSuggestion();
     renderHistory();
