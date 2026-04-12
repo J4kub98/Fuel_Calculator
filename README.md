@@ -69,6 +69,14 @@ npm run dev    # http://localhost:3000
 npm run dev:vercel
 ```
 
+## Vercel Config (optional)
+
+If you run the app only with the local Node server (`npm run dev`),
+`vercel.json` is optional and can be removed.
+
+Keep `vercel.json` if you want to deploy or run the app with Vercel,
+because it contains Vercel-specific routing and security headers.
+
 ## Tests
 
 ```bash
