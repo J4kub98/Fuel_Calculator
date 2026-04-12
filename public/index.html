@@ -1,4 +1,10 @@
-<style>
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Kalkulátor paliva</title>
+  <style>
 
     :root {
       --bg-body: #f4f4f5;
@@ -87,6 +93,16 @@
       box-shadow: 0 12px 36px var(--shadow-soft), 0 2px 8px var(--shadow-color);
     }
 
+    @media (max-width: 560px) {
+      .card {
+        padding: 24px 20px;
+        border-radius: 24px;
+      }
+      body {
+        padding: 24px 12px;
+      }
+    }
+
     .card-title {
       font-size: 1.1rem;
       font-weight: 700;
@@ -103,8 +119,24 @@
       margin-bottom: 24px;
     }
 
-    @media (max-width: 640px) {
-      .inputs-grid { grid-template-columns: 1fr; }
+    /* Na tabletách přejdi na 2-sloupcový layout s poslední položkou přes celou šířku */
+    @media (max-width: 560px) {
+      .inputs-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .inputs-grid .field:last-child {
+        grid-column: span 2;
+      }
+    }
+
+    /* Na telefonech 1 sloupec */
+    @media (max-width: 420px) {
+      .inputs-grid {
+        grid-template-columns: 1fr;
+      }
+      .inputs-grid .field:last-child {
+        grid-column: auto;
+      }
     }
 
     .field label {
@@ -180,6 +212,16 @@
       align-items: stretch;
     }
 
+    @media (max-width: 560px) {
+      .result-row {
+        grid-template-columns: 1fr 1fr;
+      }
+      .result-box.highlight {
+        grid-column: span 2;
+        order: -1;
+      }
+    }
+
     .result-box {
       background: var(--bg-input);
       border-radius: 24px;
@@ -201,6 +243,24 @@
       font-weight: 800;
       color: var(--text-main);
       letter-spacing: -0.5px;
+    }
+
+    
+    /* Zvyrazneni hlavniho vysledku (Naklady) */
+    .result-box.highlight {
+      background: var(--text-main);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.12);
+      transform: translateY(-4px);
+      border-color: transparent;
+    }
+    .result-box.highlight .r-label,
+    .result-box.highlight .r-unit {
+      color: var(--bg-body) !important;
+      opacity: 0.8;
+    }
+    .result-box.highlight .r-value {
+      color: var(--bg-body) !important;
+      font-size: 1.8rem;
     }
 
     .result-box .r-unit {
@@ -260,7 +320,7 @@
       gap: 16px;
     }
 
-    @media (max-width: 640px) {
+    @media (max-width: 560px) {
       .stats-grid { grid-template-columns: 1fr 1fr; }
     }
 
@@ -456,8 +516,19 @@
       .card { padding: 24px; border-radius: 28px; }
     }
 
+    /* Na tabletách: výsledky ve 2 sloupcích s highlighted boxem přes celou šířku jako první */
+    @media (max-width: 560px) {
+      .result-row {
+        grid-template-columns: 1fr 1fr;
+      }
+      .result-box.highlight {
+        grid-column: span 2;
+        order: -1;
+        transform: none;
+      }
+    }
+
     @media (max-width: 640px) {
-      .result-row { grid-template-columns: 1fr; }
       .btn-row { flex-direction: column-reverse; }
       .btn-primary,
       .btn-secondary { width: 100%; }
@@ -468,8 +539,12 @@
 
     @media (max-width: 480px) {
       h1 { font-size: 1.6rem; }
+      .card { padding: 20px; border-radius: 24px; }
+      .settings-btn { top: 16px; right: 16px; }
       .field input,
-      .month-filter select { font-size: 16px; }
+      .month-filter select { font-size: 16px; } /* zabrání přiblížení na iOS */
+      .stat-box { padding: 16px 12px; }
+      .stat-box .s-value { font-size: 1.3rem; }
       .toast {
         left: 16px;
         right: 16px;
@@ -478,13 +553,15 @@
         text-align: center;
       }
       .toast.show { transform: translateY(0); }
-      .card-title { font-size: 1.1rem; }
     }
 
     @media (max-width: 360px) {
       body { padding: 16px 8px; }
-      .card { padding: 20px; border-radius: 24px; }
+      .card { padding: 16px; border-radius: 20px; }
       .stats-grid { grid-template-columns: 1fr; }
+      /* Na velmi malých obrazovkách výsledky pod sebou */
+      .result-row { grid-template-columns: 1fr; }
+      .result-box.highlight { grid-column: auto; order: 0; transform: none; }
       .history-item {
         flex-wrap: wrap;
         gap: 12px;
@@ -693,7 +770,7 @@
   </div>
 
   <div class="settings-footer">
-    <p>v1.0.0</p>
+    <p>v1.1.0</p>
   </div>
 </div>
 
@@ -739,7 +816,7 @@
         <div class="r-value" id="resultLiters">—</div>
         <div class="r-unit">litrů</div>
       </div>
-      <div class="result-box">
+      <div class="result-box highlight">
         <div class="r-label">Náklady</div>
         <div class="r-value cost" id="resultCost">—</div>
         <div class="r-unit">korun</div>
