@@ -595,7 +595,6 @@
     </div>
 
     <div class="btn-row">
-      <button class="btn-secondary" id="btnCalc">🧮 Spočítat</button>
       <button class="btn-primary" id="btnSave">💾 Uložit jízdu</button>
     </div>
   </div>
@@ -937,8 +936,7 @@
   };
 
   // ── Event listeners ──
-  document.getElementById('btnCalc').onclick  = calculate;
-  document.getElementById('btnSave').onclick  = saveTrip;
+  document.getElementById('btnSave').onclick = saveTrip;
 
   ['distance', 'consumption', 'price'].forEach(id => {
     document.getElementById(id).addEventListener('input', calculate);
