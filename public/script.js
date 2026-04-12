@@ -2,12 +2,19 @@
   const LEGACY_USER_ID_KEY = 'fuel_user_id';
   let sessionUserId = null;
 
-  async function ensureSession() {
-    const legacyUserId = localStorage.getItem(LEGACY_USER_ID_KEY);
+  async function ensureSession(options = {}) {
+    const legacyUserId =
+      options.legacyUserId !== undefined
+        ? options.legacyUserId
+        : localStorage.getItem(LEGACY_USER_ID_KEY);
     const payload = {};
 
     if (legacyUserId) {
       payload.legacyUserId = legacyUserId;
+    }
+
+    if (options.force === true) {
+      payload.force = true;
     }
 
     const res = await fetch('/api/session', {
@@ -18,15 +25,24 @@
     });
 
     if (!res.ok) {
-      throw new Error('Nepodařilo se vytvořit bezpečnou relaci');
+      let msg = 'Nepodařilo se vytvořit bezpečnou relaci';
+      try {
+        const errData = await res.json();
+        if (errData && errData.error) msg = errData.error;
+      } catch {
+        // Ignore parse errors and keep generic message.
+      }
+      throw new Error(msg);
     }
 
     const data = await res.json();
     sessionUserId = data.userId;
 
-    if (legacyUserId) {
+    if (legacyUserId && options.legacyUserId === undefined) {
       localStorage.removeItem(LEGACY_USER_ID_KEY);
     }
+
+    return data;
   }
 
   let history = [];
@@ -356,6 +372,8 @@
   function initSettings() {
     const overlay = document.getElementById('settingsOverlay');
     const drawer  = document.getElementById('settingsDrawer');
+    const importInput = document.getElementById('importIdInput');
+    const importButton = document.getElementById('btnImportId');
 
     function openSettings() {
       overlay.classList.add('open');
@@ -382,9 +400,58 @@
         showToast(' ID není zatím dostupné', '#f59e0b', '#451a03');
         return;
       }
-      await navigator.clipboard.writeText(sessionUserId);
-      showToast(' ID zkopírováno!');
+      try {
+        await navigator.clipboard.writeText(sessionUserId);
+        showToast(' ID zkopírováno!');
+      } catch {
+        showToast(' Kopírování selhalo', '#f59e0b', '#451a03');
+      }
     };
+
+    const handleImport = async () => {
+      const targetId = importInput.value.trim();
+
+      if (!targetId) {
+        showToast(' Vlož ID zařízení', '#f59e0b', '#451a03');
+        return;
+      }
+
+      if (targetId === sessionUserId) {
+        showToast(' Už používáš toto ID');
+        return;
+      }
+
+      const confirmed = confirm(
+        'Přepnout zařízení na importované ID? Aktuální lokální relace bude nahrazena.'
+      );
+      if (!confirmed) return;
+
+      importButton.disabled = true;
+      importButton.textContent = 'Importuji...';
+
+      try {
+        await ensureSession({ legacyUserId: targetId, force: true });
+        await fetchTrips();
+        document.getElementById('deviceIdDisplay').textContent = sessionUserId || '—';
+        importInput.value = '';
+        renderSuggestion();
+        renderHistory();
+        renderStats();
+        showToast(' ID importováno, data načtena');
+      } catch (err) {
+        showToast(` ${err.message || 'Import selhal'}`, '#f59e0b', '#451a03');
+      } finally {
+        importButton.disabled = false;
+        importButton.textContent = 'Importovat ID';
+      }
+    };
+
+    importButton.onclick = handleImport;
+    importInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        handleImport();
+      }
+    });
   }
 
   // ── Init ──

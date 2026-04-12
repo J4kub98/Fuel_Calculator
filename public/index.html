@@ -47,12 +47,14 @@
     <div class="settings-section-title">Moje zařízení</div>
     <p class="settings-description">
       Tvoje data jsou navázaná na bezpečnou relaci tohoto prohlížeče.
-      Přímý import ID je z bezpečnostních důvodů vypnutý.
+      Pro přístup z jiného zařízení můžeš importovat stejné ID.
     </p>
     
     <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:32px;">
       <code class="device-id-box" id="deviceIdDisplay"></code>
       <button class="btn-secondary" id="btnCopyId" style="width: 100%; justify-content: center;">Kopírovat</button>
+      <input type="text" id="importIdInput" placeholder="Vlož ID z jiného zařízení" autocomplete="off" style="width:100%;" />
+      <button class="btn-secondary" id="btnImportId" style="width: 100%; justify-content: center;">Importovat ID</button>
     </div>
   </div>
 
