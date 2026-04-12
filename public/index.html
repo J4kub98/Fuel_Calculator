@@ -465,6 +465,138 @@
       border-color: #18181b;
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
+  
+    /* Settings Drawer Styles */
+    .settings-btn {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      width: 48px;
+      height: 48px;
+      border-radius: 24px;
+      background: #ffffff;
+      color: #18181b;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      transition: all 0.2s ease;
+      z-index: 100;
+    }
+    .settings-btn::before {
+      content: '';
+      display: block;
+      width: 20px;
+      height: 20px;
+      background-image: url('data:image/svg+xml;utf8,<svg stroke="%2318181b" stroke-width="2" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"></path></svg>');
+      background-size: cover;
+    }
+    .settings-btn:hover { background: #f4f4f5; transform: rotate(15deg); }
+    
+    .settings-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(4px);
+      z-index: 300;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .settings-overlay.show { opacity: 1; pointer-events: all; }
+    
+    .settings-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: min(400px, 100vw);
+      height: 100%;
+      background: #ffffff;
+      box-shadow: -8px 0 32px rgba(0,0,0,0.05);
+      z-index: 400;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow-y: auto;
+    }
+    .settings-drawer.open { transform: translateX(0); }
+    
+    .settings-drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 32px 32px 24px;
+      border-bottom: 1px solid rgba(0,0,0,0.03);
+    }
+    .settings-drawer-header h2 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #18181b;
+      margin: 0;
+      letter-spacing: -0.5px;
+    }
+    .settings-close {
+      background: #f4f4f5;
+      color: #18181b;
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 16px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+    .settings-close:hover { background: #e4e4e7; }
+    
+    .settings-section {
+      padding: 32px;
+    }
+    .settings-section-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #18181b;
+      margin-bottom: 12px;
+      letter-spacing: -0.2px;
+    }
+    .settings-description {
+      font-size: 0.85rem;
+      color: #71717a;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+    
+    .device-id-box {
+      width: 100%;
+      background: #f4f4f5;
+      border: 1px solid rgba(0,0,0,0.05);
+      border-radius: 16px;
+      padding: 16px;
+      font-size: 0.8rem;
+      color: #18181b;
+      word-break: break-all;
+      margin-bottom: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    
+    .settings-footer {
+      padding: 24px 32px;
+      margin-top: auto;
+      border-top: 1px solid rgba(0,0,0,0.03);
+    }
+    .settings-footer p {
+      font-size: 0.8rem;
+      color: #a1a1aa;
+      font-weight: 500;
+    }
   </style>
 </head>
 <body>
@@ -474,32 +606,37 @@
 
 <!-- Settings overlay + drawer -->
 <div class="settings-overlay" id="settingsOverlay"></div>
+
 <div class="settings-drawer" id="settingsDrawer">
   <div class="settings-drawer-header">
     <h2>Nastavení</h2>
-    <button class="settings-close" id="btnCloseSettings">✕</button>
+    <button class="settings-close" id="btnCloseSettings">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    </button>
   </div>
 
-  <!-- Sekce: Moje zařízení -->
   <div class="settings-section">
     <div class="settings-section-title">Moje zařízení</div>
-    <p style="font-size:0.8rem; color:#64748b; margin-bottom:14px; line-height:1.5;">
+    <p class="settings-description">
       Tvoje data jsou vázaná na toto zařízení. Chceš přistupovat z jiného zařízení?
       Zkopíruj své ID a vlož ho tam.
     </p>
-    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px;">
-      <code id="deviceIdDisplay" style="flex:1; background:#131622; border:1.5px solid #2d3348; border-radius:8px; padding:9px 12px; font-size:0.72rem; color:#94a3b8; word-break:break-all;"></code>
-      <button class="btn-secondary" id="btnCopyId" style="padding:9px 14px; font-size:0.8rem; white-space:nowrap;"> Kopírovat</button>
+    
+    <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:32px;">
+      <code class="device-id-box" id="deviceIdDisplay"></code>
+      <button class="btn-secondary" id="btnCopyId" style="width: 100%; justify-content: center;">Kopírovat</button>
     </div>
-    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-      <input type="text" id="importIdInput" placeholder="Vlož ID z jiného zařízení…"
-        style="flex:1; background:#131622; border:1.5px solid #2d3348; border-radius:8px; padding:9px 12px; color:#f1f5f9; font-size:0.85rem; outline:none;" />
-      <button class="btn-secondary" id="btnImportId" style="padding:9px 14px; font-size:0.8rem; white-space:nowrap;">↩ Použít</button>
+    
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <input type="text" id="importIdInput" placeholder="Vlož ID z jiného zařízení…" style="width: 100%; background:#f4f4f5; border:1px solid rgba(0,0,0,0.05); border-radius:12px; padding:16px; font-size:0.85rem; outline:none; transition: all 0.2s;" />
+      <button class="btn-primary" id="btnImportId" style="width: 100%; justify-content: center;">Použít</button>
     </div>
   </div>
 
-  <div style="padding: 20px 24px; margin-top: auto;">
-    <p style="font-size: 0.72rem; color: #334155;">v1.0.0</p>
+  <div class="settings-footer">
+    <p>v1.0.0</p>
   </div>
 </div>
 
