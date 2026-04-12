@@ -374,6 +374,8 @@
 
     .toast.show { transform: translateX(-50%) translateY(0); }
 
+    #importIdInput:focus { border-color: #6366f1; }
+
     @media (max-width: 768px) {
       body { padding: 20px 14px; }
       .card { padding: 20px; }
@@ -535,6 +537,24 @@
       <button class="btn-secondary" id="btnClearAll" style="padding:6px 12px; font-size:0.75rem;">🗑️ Vše smazat</button>
     </div>
     <div class="history-list" id="historyList"></div>
+  </div>
+
+  <!-- DEVICE ID CARD — přenos dat na jiné zařízení -->
+  <div class="card" id="deviceCard">
+    <div class="card-title">Moje zařízení</div>
+    <p style="font-size:0.8rem; color:#64748b; margin-bottom:14px;">
+      Tvoje data jsou vázaná na toto zařízení. Chceš přistupovat z jiného zařízení nebo prohlížeče?
+      Zkopíruj své ID a vlož ho na novém zařízení.
+    </p>
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+      <code id="deviceIdDisplay" style="flex:1; background:#131622; border:1.5px solid #2d3348; border-radius:8px; padding:9px 12px; font-size:0.78rem; color:#94a3b8; word-break:break-all;"></code>
+      <button class="btn-secondary" id="btnCopyId" style="padding:9px 14px; font-size:0.8rem; white-space:nowrap;">📋 Kopírovat</button>
+    </div>
+    <div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+      <input type="text" id="importIdInput" placeholder="Vlož ID z jiného zařízení…"
+        style="flex:1; background:#131622; border:1.5px solid #2d3348; border-radius:8px; padding:9px 12px; color:#f1f5f9; font-size:0.85rem; outline:none;" />
+      <button class="btn-secondary" id="btnImportId" style="padding:9px 14px; font-size:0.8rem; white-space:nowrap;">↩ Použít</button>
+    </div>
   </div>
 </div>
 
@@ -839,6 +859,45 @@
     renderStats();
   });
 
+  // ── Device ID karta — přenos dat na jiné zařízení ──
+  function initDeviceCard() {
+    const id = getUserId();
+    document.getElementById('deviceIdDisplay').textContent = id;
+
+    // Kopírování ID do schránky
+    document.getElementById('btnCopyId').onclick = async () => {
+      await navigator.clipboard.writeText(id);
+      showToast('✅ ID zkopírováno!');
+    };
+
+    // Import ID z jiného zařízení — přepíše lokální UUID a přenačte data
+    document.getElementById('btnImportId').onclick = async () => {
+      const input = document.getElementById('importIdInput').value.trim();
+      const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+      if (!UUID_REGEX.test(input)) {
+        showToast('⚠️ Neplatné ID — zkopíruj ho přesně', '#f59e0b', '#451a03');
+        return;
+      }
+
+      if (!confirm('Přepnout na jiné zařízení? Aktuální data tohoto zařízení zůstanou v databázi, ale přestaneš je vidět.')) return;
+
+      localStorage.setItem(USER_ID_KEY, input);
+      document.getElementById('deviceIdDisplay').textContent = input;
+      document.getElementById('importIdInput').value = '';
+
+      try {
+        await fetchTrips();
+      } catch {
+        showToast('⚠️ Nepodařilo se načíst jízdy', '#f59e0b', '#451a03');
+      }
+      renderSuggestion();
+      renderHistory();
+      renderStats();
+      showToast('✅ Přepnuto na jiné zařízení!');
+    };
+  }
+
   // ── Init ──
   async function init() {
     try {
@@ -849,6 +908,7 @@
     renderSuggestion();
     renderHistory();
     renderStats();
+    initDeviceCard();
   }
 
   init();
