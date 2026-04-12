@@ -268,12 +268,97 @@
       background-repeat: no-repeat;
     }
 
+    /* ── Settings button (fixed, top-right) ── */
+    .settings-btn {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      width: 40px;
+      height: 40px;
+      background: #1e2130;
+      border: 1px solid #2d3348;
+      border-radius: 10px;
+      color: #64748b;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 200;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .settings-btn:hover { border-color: #6366f1; color: #a5b4fc; }
+
+    /* ── Settings drawer ── */
+    .settings-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 300;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+    .settings-overlay.open { opacity: 1; pointer-events: all; }
+
+    .settings-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: min(360px, 100vw);
+      height: 100%;
+      background: #1e2130;
+      border-left: 1px solid #2d3348;
+      z-index: 400;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow-y: auto;
+    }
+    .settings-drawer.open { transform: translateX(0); }
+
+    .settings-drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid #2d3348;
+    }
+    .settings-drawer-header h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+    .settings-close {
+      background: none;
+      color: #64748b;
+      font-size: 1.2rem;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: color 0.15s;
+    }
+    .settings-close:hover { color: #f1f5f9; }
+
+    .settings-section {
+      padding: 24px;
+      border-bottom: 1px solid #2d3348;
+    }
+    .settings-section-title {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #64748b;
+      margin-bottom: 14px;
+    }
+
     /* ── History ── */
     .history-list {
       display: flex;
       flex-direction: column;
       gap: 8px;
-      max-height: min(52vh, 420px);
+      max-height: 560px;
       overflow-y: auto;
     }
 
@@ -425,6 +510,36 @@
 </head>
 <body>
 
+<!-- Settings button — fixed top-right -->
+<button class="settings-btn" id="btnOpenSettings" title="Nastavení">⚙️</button>
+
+<!-- Settings overlay + drawer -->
+<div class="settings-overlay" id="settingsOverlay"></div>
+<div class="settings-drawer" id="settingsDrawer">
+  <div class="settings-drawer-header">
+    <h2>Nastavení</h2>
+    <button class="settings-close" id="btnCloseSettings">✕</button>
+  </div>
+
+  <!-- Sekce: Moje zařízení -->
+  <div class="settings-section">
+    <div class="settings-section-title">Moje zařízení</div>
+    <p style="font-size:0.8rem; color:#64748b; margin-bottom:14px; line-height:1.5;">
+      Tvoje data jsou vázaná na toto zařízení. Chceš přistupovat z jiného zařízení?
+      Zkopíruj své ID a vlož ho tam.
+    </p>
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px;">
+      <code id="deviceIdDisplay" style="flex:1; background:#131622; border:1.5px solid #2d3348; border-radius:8px; padding:9px 12px; font-size:0.72rem; color:#94a3b8; word-break:break-all;"></code>
+      <button class="btn-secondary" id="btnCopyId" style="padding:9px 14px; font-size:0.8rem; white-space:nowrap;">📋 Kopírovat</button>
+    </div>
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+      <input type="text" id="importIdInput" placeholder="Vlož ID z jiného zařízení…"
+        style="flex:1; background:#131622; border:1.5px solid #2d3348; border-radius:8px; padding:9px 12px; color:#f1f5f9; font-size:0.85rem; outline:none;" />
+      <button class="btn-secondary" id="btnImportId" style="padding:9px 14px; font-size:0.8rem; white-space:nowrap;">↩ Použít</button>
+    </div>
+  </div>
+</div>
+
 <div class="container">
   <div>
     <h1>⛽ Kalkulátor paliva</h1>
@@ -539,23 +654,6 @@
     <div class="history-list" id="historyList"></div>
   </div>
 
-  <!-- DEVICE ID CARD — přenos dat na jiné zařízení -->
-  <div class="card" id="deviceCard">
-    <div class="card-title">Moje zařízení</div>
-    <p style="font-size:0.8rem; color:#64748b; margin-bottom:14px;">
-      Tvoje data jsou vázaná na toto zařízení. Chceš přistupovat z jiného zařízení nebo prohlížeče?
-      Zkopíruj své ID a vlož ho na novém zařízení.
-    </p>
-    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-      <code id="deviceIdDisplay" style="flex:1; background:#131622; border:1.5px solid #2d3348; border-radius:8px; padding:9px 12px; font-size:0.78rem; color:#94a3b8; word-break:break-all;"></code>
-      <button class="btn-secondary" id="btnCopyId" style="padding:9px 14px; font-size:0.8rem; white-space:nowrap;">📋 Kopírovat</button>
-    </div>
-    <div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-      <input type="text" id="importIdInput" placeholder="Vlož ID z jiného zařízení…"
-        style="flex:1; background:#131622; border:1.5px solid #2d3348; border-radius:8px; padding:9px 12px; color:#f1f5f9; font-size:0.85rem; outline:none;" />
-      <button class="btn-secondary" id="btnImportId" style="padding:9px 14px; font-size:0.8rem; white-space:nowrap;">↩ Použít</button>
-    </div>
-  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -859,18 +957,37 @@
     renderStats();
   });
 
-  // ── Device ID karta — přenos dat na jiné zařízení ──
-  function initDeviceCard() {
-    const id = getUserId();
-    document.getElementById('deviceIdDisplay').textContent = id;
+  // ── Settings drawer ──
+  function initSettings() {
+    const overlay = document.getElementById('settingsOverlay');
+    const drawer  = document.getElementById('settingsDrawer');
+
+    function openSettings() {
+      overlay.classList.add('open');
+      drawer.classList.add('open');
+    }
+    function closeSettings() {
+      overlay.classList.remove('open');
+      drawer.classList.remove('open');
+    }
+
+    document.getElementById('btnOpenSettings').onclick = openSettings;
+    document.getElementById('btnCloseSettings').onclick = closeSettings;
+    // Klik na overlay zavře drawer
+    overlay.onclick = closeSettings;
+    // Escape zavře drawer
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSettings(); });
+
+    // Zobraz aktuální UUID
+    document.getElementById('deviceIdDisplay').textContent = getUserId();
 
     // Kopírování ID do schránky
     document.getElementById('btnCopyId').onclick = async () => {
-      await navigator.clipboard.writeText(id);
+      await navigator.clipboard.writeText(getUserId());
       showToast('✅ ID zkopírováno!');
     };
 
-    // Import ID z jiného zařízení — přepíše lokální UUID a přenačte data
+    // Import ID z jiného zařízení — přepíše UUID v localStorage a přenačte data
     document.getElementById('btnImportId').onclick = async () => {
       const input = document.getElementById('importIdInput').value.trim();
       const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -879,12 +996,12 @@
         showToast('⚠️ Neplatné ID — zkopíruj ho přesně', '#f59e0b', '#451a03');
         return;
       }
-
-      if (!confirm('Přepnout na jiné zařízení? Aktuální data tohoto zařízení zůstanou v databázi, ale přestaneš je vidět.')) return;
+      if (!confirm('Přepnout na jiné zařízení? Data tohoto zařízení zůstanou v databázi, ale přestaneš je vidět.')) return;
 
       localStorage.setItem(USER_ID_KEY, input);
       document.getElementById('deviceIdDisplay').textContent = input;
       document.getElementById('importIdInput').value = '';
+      closeSettings();
 
       try {
         await fetchTrips();
@@ -908,7 +1025,7 @@
     renderSuggestion();
     renderHistory();
     renderStats();
-    initDeviceCard();
+    initSettings();
   }
 
   init();
