@@ -1106,6 +1106,42 @@
   });
 
   // ── Settings drawer ──
+  
+  // ── Dark Mode Logic ──
+  function initDarkMode() {
+    const dmToggle = document.getElementById('darkModeToggle');
+    const dmKnob = document.getElementById('dmKnob');
+    
+    // Zjistit, jestli má být tmavý režim (z localStorage nebo systému)
+    const isDark = localStorage.getItem('dark-mode') === 'true' || 
+                  (localStorage.getItem('dark-mode') === null && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      if (dmToggle && dmKnob) {
+          dmToggle.checked = true;
+          dmKnob.style.transform = 'translate(28px, 0)';
+          dmKnob.style.background = 'var(--bg-card)';
+      }
+    }
+
+    if (dmToggle && dmKnob) {
+      dmToggle.addEventListener('change', (e) => {
+          if(e.target.checked) {
+              document.documentElement.classList.add('dark');
+              localStorage.setItem('dark-mode', 'true');
+              dmKnob.style.transform = 'translate(28px, 0)';
+              dmKnob.style.background = 'var(--bg-card)';
+          } else {
+              document.documentElement.classList.remove('dark');
+              localStorage.setItem('dark-mode', 'false');
+              dmKnob.style.transform = 'translate(0, 0)';
+              dmKnob.style.background = 'var(--text-main)';
+          }
+      });
+    }
+  }
+
   function initSettings() {
     const overlay = document.getElementById('settingsOverlay');
     const drawer  = document.getElementById('settingsDrawer');
@@ -1174,6 +1210,7 @@
     renderHistory();
     renderStats();
     initSettings();
+    initDarkMode();
   }
 
   init();
