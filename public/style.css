@@ -668,19 +668,20 @@
     }
 
     :root.dark #importIdInput {
-      background: #ffffff;
-      color: #111827;
-      border-color: #e5e7eb;
+      background: var(--bg-input);
+      color: var(--text-main);
+      border: 1px solid var(--border-soft);
+      border-radius: 16px;
     }
 
     :root.dark #importIdInput::placeholder {
-      color: #6b7280;
+      color: var(--text-mut);
     }
 
     :root.dark #importIdInput:focus {
-      background: #ffffff;
-      border-color: #9ca3af;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      background: var(--bg-input-focus);
+      border-color: var(--text-main);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
     }
 
     :root.dark #btnImportId {
