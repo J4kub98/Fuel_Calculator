@@ -311,6 +311,16 @@
 
     .btn-secondary:hover { background: var(--bg-btn-sec-hover); }
 
+    :root.dark #btnCopyId {
+      background: var(--bg-btn-prim);
+      color: var(--text-inv);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    :root.dark #btnCopyId:hover {
+      background: var(--bg-btn-prim-hover);
+    }
+
     /* ── Monthly stats ── */
     .stats-grid {
       display: grid;
@@ -559,7 +569,7 @@
         padding-right: 44px;
       }
       .settings-btn {
-        top: 6px;
+        top: 11px;
         right: 8px;
         width: 34px;
         height: 34px;
@@ -654,7 +664,7 @@
     /* Settings Drawer Styles */
     .settings-btn {
       position: absolute;
-      top: 6px;
+      top: 11px;
       right: 8px;
       width: 40px;
       height: 40px;
