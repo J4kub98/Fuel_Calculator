@@ -202,6 +202,31 @@
 
     .suggestion:hover { background: var(--bg-btn-sec-hover); color: var(--text-main); }
 
+    @media (min-width: 768px) {
+      .suggestion {
+        margin-top: 10px;
+        padding: 9px 16px;
+        border-radius: 12px;
+        border: 1px solid var(--border-soft);
+        background: var(--bg-card);
+        color: var(--text-main);
+        font-size: 0.9rem;
+        font-weight: 700;
+        white-space: nowrap;
+        box-shadow: 0 4px 10px var(--shadow-color);
+      }
+
+      .suggestion strong {
+        color: var(--text-main);
+        letter-spacing: -0.01em;
+      }
+
+      .suggestion:hover {
+        transform: translateY(-1px);
+        background: var(--bg-btn-sec-hover);
+      }
+    }
+
     /* ── Result row ── */
     .result-row {
       display: grid;
@@ -659,6 +684,32 @@
       background: var(--bg-card);
       border-color: var(--text-main);
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    :root.dark #importIdInput {
+      background: #ffffff;
+      color: #111827;
+      border-color: #e5e7eb;
+    }
+
+    :root.dark #importIdInput::placeholder {
+      color: #6b7280;
+    }
+
+    :root.dark #importIdInput:focus {
+      background: #ffffff;
+      border-color: #9ca3af;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    :root.dark #btnImportId {
+      background: #ffffff;
+      color: #111827;
+      border: 1px solid #e5e7eb;
+    }
+
+    :root.dark #btnImportId:hover {
+      background: #f3f4f6;
     }
   
     /* Settings Drawer Styles */
