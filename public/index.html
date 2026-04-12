@@ -541,24 +541,53 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  // ── Data helpers ──
-  const STORAGE_KEY = 'fuel_history_v1';
+  // ── Anonymní identifikace uživatele ──
+  // UUID v4 uložené v localStorage — každé zařízení/prohlížeč má unikátní ID
+  const USER_ID_KEY = 'fuel_user_id';
 
-  function loadHistory() {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-    catch { return []; }
+  function getUserId() {
+    let id = localStorage.getItem(USER_ID_KEY);
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem(USER_ID_KEY, id);
+    }
+    return id;
   }
 
-  function saveHistory(data) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  let history = [];
+
+  // ── API helpers ──
+  async function fetchTrips() {
+    const userId = getUserId();
+    const res = await fetch(`/api/trips?userId=${userId}`);
+    if (!res.ok) throw new Error('Nepodařilo se načíst jízdy');
+    const data = await res.json();
+    // Odstraní user_id z odpovědi — frontend ho nepotřebuje
+    history = data.map(({ user_id, ...rest }) => rest);
   }
 
-  let history = loadHistory();
+  async function postTrip(trip) {
+    const res = await fetch('/api/trips', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...trip, userId: getUserId() }),
+    });
+    if (!res.ok) throw new Error('Nepodařilo se uložit jízdu');
+    return res.json();
+  }
+
+  async function apiDeleteTrip(id) {
+    const userId = getUserId();
+    const res = await fetch(`/api/trips/${id}?userId=${userId}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error('Nepodařilo se smazat jízdu');
+  }
 
   // ── Price suggestion ──
   function getLastPrice() {
     if (!history.length) return null;
-    return history[history.length - 1].price;
+    return [...history].sort((a, b) => new Date(b.date) - new Date(a.date))[0].price;
   }
 
   function renderSuggestion() {
@@ -581,32 +610,39 @@
 
   // ── Calculate ──
   function calculate() {
-    const dist = parseFloat(document.getElementById('distance').value) || 0;
-    const cons = parseFloat(document.getElementById('consumption').value) || 0;
+    const dist  = parseFloat(document.getElementById('distance').value) || 0;
+    const cons  = parseFloat(document.getElementById('consumption').value) || 0;
     const price = parseFloat(document.getElementById('price').value) || 0;
 
     if (dist <= 0 || cons <= 0 || price <= 0) {
       document.getElementById('resultLiters').textContent = '—';
-      document.getElementById('resultCost').textContent = '—';
-      document.getElementById('resultPerKm').textContent = '—';
+      document.getElementById('resultCost').textContent   = '—';
+      document.getElementById('resultPerKm').textContent  = '—';
       return null;
     }
 
     const liters = (dist * cons) / 100;
-    const cost = liters * price;
-    const perKm = cost / dist;
+    const cost   = liters * price;
+    const perKm  = cost / dist;
 
     document.getElementById('resultLiters').textContent = liters.toFixed(3);
-    document.getElementById('resultCost').textContent = cost.toFixed(2);
-    document.getElementById('resultPerKm').textContent = perKm.toFixed(2);
+    document.getElementById('resultCost').textContent   = cost.toFixed(2);
+    document.getElementById('resultPerKm').textContent  = perKm.toFixed(2);
 
     return { liters, cost, perKm };
   }
 
+  // ── Loading state ──
+  function setSaveLoading(isLoading) {
+    const btn = document.getElementById('btnSave');
+    btn.disabled    = isLoading;
+    btn.textContent = isLoading ? '⏳ Ukládám...' : '💾 Uložit jízdu';
+  }
+
   // ── Save trip ──
-  function saveTrip() {
-    const dist = parseFloat(document.getElementById('distance').value);
-    const cons = parseFloat(document.getElementById('consumption').value);
+  async function saveTrip() {
+    const dist  = parseFloat(document.getElementById('distance').value);
+    const cons  = parseFloat(document.getElementById('consumption').value);
     const price = parseFloat(document.getElementById('price').value);
 
     if (!dist || !cons || !price) {
@@ -617,37 +653,42 @@
     const result = calculate();
     if (!result) return;
 
-    const now = new Date();
-    const trip = {
-      id: Date.now(),
-      date: now.toISOString(),
-      distance: dist,
-      consumption: cons,
-      price: price,
-      liters: result.liters,
-      cost: result.cost,
-    };
+    setSaveLoading(true);
+    try {
+      const saved = await postTrip({
+        date:        new Date().toISOString(),
+        distance:    dist,
+        consumption: cons,
+        price:       price,
+        liters:      result.liters,
+        cost:        result.cost,
+      });
 
-    history.push(trip);
-    saveHistory(history);
+      const { userId, ...trip } = saved;
+      history.push(trip);
 
-    document.getElementById('distance').value = '';
-    document.getElementById('resultLiters').textContent = '—';
-    document.getElementById('resultCost').textContent = '—';
-    document.getElementById('resultPerKm').textContent = '—';
+      document.getElementById('distance').value           = '';
+      document.getElementById('resultLiters').textContent = '—';
+      document.getElementById('resultCost').textContent   = '—';
+      document.getElementById('resultPerKm').textContent  = '—';
 
-    renderSuggestion();
-    renderHistory();
-    renderStats();
-    showToast('✅ Jízda uložena!');
+      renderSuggestion();
+      renderHistory();
+      renderStats();
+      showToast('✅ Jízda uložena!');
+    } catch {
+      showToast('⚠️ Chyba při ukládání!', '#f59e0b', '#451a03');
+    } finally {
+      setSaveLoading(false);
+    }
   }
 
   // ── Toast ──
   function showToast(msg, bg = '#22c55e', color = '#052e16') {
     const t = document.getElementById('toast');
-    t.textContent = msg;
+    t.textContent      = msg;
     t.style.background = bg;
-    t.style.color = color;
+    t.style.color      = color;
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 2200);
   }
@@ -656,21 +697,21 @@
   function buildMonthSelector() {
     const months = {};
     history.forEach(t => {
-      const d = new Date(t.date);
+      const d   = new Date(t.date);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       months[key] = (months[key] || 0) + 1;
     });
 
     const keys = Object.keys(months).sort().reverse();
-    const sel = document.getElementById('monthSelect');
+    const sel  = document.getElementById('monthSelect');
     const current = sel.value;
     sel.innerHTML = `<option value="all">Všechny měsíce (${history.length})</option>`;
 
     keys.forEach(k => {
       const [y, m] = k.split('-');
-      const label = new Date(y, m - 1).toLocaleDateString('cs-CZ', { month: 'long', year: 'numeric' });
-      const opt = document.createElement('option');
-      opt.value = k;
+      const label  = new Date(y, m - 1).toLocaleDateString('cs-CZ', { month: 'long', year: 'numeric' });
+      const opt    = document.createElement('option');
+      opt.value    = k;
       opt.textContent = `${label} (${months[k]})`;
       sel.appendChild(opt);
     });
@@ -678,7 +719,7 @@
     if (current && [...sel.options].some(o => o.value === current)) {
       sel.value = current;
     } else if (keys.length) {
-      sel.value = keys[0]; // default to latest month
+      sel.value = keys[0];
     }
   }
 
@@ -686,7 +727,7 @@
     const sel = document.getElementById('monthSelect').value;
     if (sel === 'all') return history;
     return history.filter(t => {
-      const d = new Date(t.date);
+      const d   = new Date(t.date);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       return key === sel;
     });
@@ -694,17 +735,17 @@
 
   // ── Render stats ──
   function renderStats() {
-    const filtered = getFilteredHistory();
-    const totalKm = filtered.reduce((s, t) => s + t.distance, 0);
-    const totalL = filtered.reduce((s, t) => s + t.liters, 0);
+    const filtered  = getFilteredHistory();
+    const totalKm   = filtered.reduce((s, t) => s + t.distance, 0);
+    const totalL    = filtered.reduce((s, t) => s + t.liters, 0);
     const totalCost = filtered.reduce((s, t) => s + t.cost, 0);
-    const trips = filtered.length;
+    const trips     = filtered.length;
 
-    document.getElementById('statKm').textContent = totalKm.toFixed(1);
-    document.getElementById('statLiters').textContent = totalL.toFixed(2);
-    document.getElementById('statCost').textContent = Math.round(totalCost);
-    document.getElementById('statTrips').textContent = trips;
-    document.getElementById('statAvgKm').textContent = trips ? (totalKm / trips).toFixed(1) : '0';
+    document.getElementById('statKm').textContent      = totalKm.toFixed(1);
+    document.getElementById('statLiters').textContent  = totalL.toFixed(2);
+    document.getElementById('statCost').textContent    = Math.round(totalCost);
+    document.getElementById('statTrips').textContent   = trips;
+    document.getElementById('statAvgKm').textContent   = trips ? (totalKm / trips).toFixed(1) : '0';
     document.getElementById('statAvgCost').textContent = trips ? Math.round(totalCost / trips) : '0';
   }
 
@@ -712,7 +753,7 @@
   function renderHistory() {
     buildMonthSelector();
     const filtered = getFilteredHistory().slice().reverse();
-    const el = document.getElementById('historyList');
+    const el       = document.getElementById('historyList');
 
     if (!filtered.length) {
       el.innerHTML = `<div class="empty-state"><div class="big">🚗</div>Žádné jízdy v tomto období</div>`;
@@ -720,10 +761,10 @@
     }
 
     el.innerHTML = filtered.map(trip => {
-      const d = new Date(trip.date);
-      const day = d.getDate();
+      const d          = new Date(trip.date);
+      const day        = d.getDate();
       const monthShort = d.toLocaleDateString('cs-CZ', { month: 'short' });
-      const time = d.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+      const time       = d.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
 
       return `
         <div class="history-item">
@@ -740,38 +781,46 @@
             <div class="amount">${trip.cost.toFixed(2)} Kč</div>
             <div class="liters">${trip.liters.toFixed(3)} l</div>
           </div>
-          <button class="hi-delete" onclick="deleteTrip(${trip.id})" title="Smazat">✕</button>
+          <button class="hi-delete" onclick="handleDeleteTrip('${trip.id}')" title="Smazat">✕</button>
         </div>
       `;
     }).join('');
   }
 
   // ── Delete trip ──
-  function deleteTrip(id) {
-    history = history.filter(t => t.id !== id);
-    saveHistory(history);
-    renderHistory();
-    renderStats();
-    renderSuggestion();
-    showToast('🗑️ Jízda smazána', '#ef4444', '#450a0a');
-  }
-
-  // ── Clear all ──
-  document.getElementById('btnClearAll').onclick = () => {
-    if (!history.length) return;
-    if (confirm('Opravdu smazat celou historii?')) {
-      history = [];
-      saveHistory(history);
+  async function handleDeleteTrip(id) {
+    try {
+      await apiDeleteTrip(id);
+      history = history.filter(t => t.id !== id);
       renderHistory();
       renderStats();
       renderSuggestion();
-      showToast('🗑️ Historie smazána', '#ef4444', '#450a0a');
+      showToast('🗑️ Jízda smazána', '#ef4444', '#450a0a');
+    } catch {
+      showToast('⚠️ Chyba při mazání!', '#f59e0b', '#451a03');
+    }
+  }
+
+  // ── Clear all ──
+  document.getElementById('btnClearAll').onclick = async () => {
+    if (!history.length) return;
+    if (confirm('Opravdu smazat celou historii?')) {
+      try {
+        await Promise.all(history.map(t => apiDeleteTrip(t.id)));
+        history = [];
+        renderHistory();
+        renderStats();
+        renderSuggestion();
+        showToast('🗑️ Historie smazána', '#ef4444', '#450a0a');
+      } catch {
+        showToast('⚠️ Chyba při mazání!', '#f59e0b', '#451a03');
+      }
     }
   };
 
   // ── Event listeners ──
-  document.getElementById('btnCalc').onclick = calculate;
-  document.getElementById('btnSave').onclick = saveTrip;
+  document.getElementById('btnCalc').onclick  = calculate;
+  document.getElementById('btnSave').onclick  = saveTrip;
 
   ['distance', 'consumption', 'price'].forEach(id => {
     document.getElementById(id).addEventListener('input', calculate);
@@ -785,16 +834,24 @@
   });
 
   document.getElementById('btnResetFilter').addEventListener('click', () => {
-    const monthSelect = document.getElementById('monthSelect');
-    monthSelect.value = 'all';
+    document.getElementById('monthSelect').value = 'all';
     renderHistory();
     renderStats();
   });
 
   // ── Init ──
-  renderSuggestion();
-  renderHistory();
-  renderStats();
+  async function init() {
+    try {
+      await fetchTrips();
+    } catch {
+      showToast('⚠️ Nepodařilo se načíst jízdy', '#f59e0b', '#451a03');
+    }
+    renderSuggestion();
+    renderHistory();
+    renderStats();
+  }
+
+  init();
 </script>
 </body>
 </html>
