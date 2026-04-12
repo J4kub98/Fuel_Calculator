@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Pozadí — zaoblený čtverec v brand barvě -->
+  <rect width="512" height="512" rx="96" fill="#2563eb"/>
+  <!-- Kapka paliva — symbolizuje fuel calculator -->
+  <path d="M256 100 C256 100 160 230 160 300 C160 355 203 400 256 400 C309 400 352 355 352 300 C352 230 256 100 256 100 Z" fill="white" opacity="0.95"/>
+  <!-- Odlesk na kapce -->
+  <ellipse cx="230" cy="270" rx="20" ry="35" fill="white" opacity="0.3" transform="rotate(-20 230 270)"/>
+</svg>
