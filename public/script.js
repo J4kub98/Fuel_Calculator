@@ -242,7 +242,7 @@
   // ── Render history ──
   function renderHistory() {
     buildMonthSelector();
-    const filtered = getFilteredHistory().slice().reverse();
+    const filtered = getFilteredHistory();
     const el       = document.getElementById('historyList');
 
     if (!filtered.length) {
