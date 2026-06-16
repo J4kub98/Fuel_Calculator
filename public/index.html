@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="cs">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -15,185 +16,196 @@
   <link rel="apple-touch-icon" href="/icon-192.png">
   <link rel="stylesheet" href="style.css?v=10">
 </head>
+
 <body>
 
-<!-- Settings button — fixed top-right -->
-<button class="settings-btn" id="btnOpenSettings" title="Nastavení">
-  <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-    <circle cx="12" cy="12" r="3"></circle>
-    <path stroke-linecap="round" stroke-linejoin="round" d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"></path>
-  </svg>
-</button>
+  <!-- Settings button — fixed top-right -->
+  <button class="settings-btn" id="btnOpenSettings" title="Nastavení">
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="3"></circle>
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z">
+      </path>
+    </svg>
+  </button>
 
-<div class="settings-overlay" id="settingsOverlay"></div>
+  <div class="settings-overlay" id="settingsOverlay"></div>
 
-<div class="settings-drawer" id="settingsDrawer">
-  <div class="settings-drawer-header">
-    <h2>Nastavení</h2>
-    <button class="settings-close" id="btnCloseSettings">
-      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
-      </svg>
-    </button>
-  </div>
-
-  <div class="settings-section">
-    <div class="settings-section-title">Vzhled</div>
-
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:32px; padding: 20px; background: var(--bg-input); border-radius: 16px; border: 1px solid var(--border-soft);">
-      <div>
-        <div style="font-weight:700; font-size:0.9rem; color:var(--text-main); margin-bottom:4px;">Tmavý režim</div>
-        <div style="font-size:0.8rem; color:var(--text-mut);">Přepnout vzhled aplikace</div>
-      </div>
-      <label style="position:relative; width:52px; height:28px; cursor:pointer;">
-        <input type="checkbox" id="darkModeToggle" style="opacity:0; width:0; height:0;" />
-        <span style="position:absolute; top:0; left:0; right:0; bottom:0; background:var(--bg-btn-sec-hover); border-radius:14px; transition:.3s;"></span>
-        <span id="dmKnob" style="position:absolute; content:''; height:20px; width:20px; left:4px; bottom:4px; background:var(--text-main); border-radius:50%; transition:.3s;"></span>
-      </label>
+  <div class="settings-drawer" id="settingsDrawer">
+    <div class="settings-drawer-header">
+      <h2>Nastavení</h2>
+      <button class="settings-close" id="btnCloseSettings">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
     </div>
 
-    <div class="settings-section-title">Moje zařízení</div>
-    <p class="settings-description">
-      Tvoje data jsou navázaná na bezpečnou relaci tohoto prohlížeče.
-      Pro přístup z jiného zařízení můžeš importovat stejné ID.
-    </p>
-    <div style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); padding: 12px; border-radius: 8px; margin-bottom: 16px;">
-      <p style="margin: 0; font-size: 0.85rem; color: var(--text-main); font-weight: 500;">
-        <span style="font-size: 1.1em; margin-right: 4px;">⚠️</span> 
-        Doporučujeme si ID zkopírovat a někam uložit (např. do poznámek). Slouží jako záloha pro případ, že promažeš data prohlížeče.
+    <div class="settings-section">
+      <div class="settings-section-title">Vzhled</div>
+
+      <div
+        style="display:flex; justify-content:space-between; align-items:center; margin-bottom:32px; padding: 20px; background: var(--bg-input); border-radius: 16px; border: 1px solid var(--border-soft);">
+        <div>
+          <div style="font-weight:700; font-size:0.9rem; color:var(--text-main); margin-bottom:4px;">Tmavý režim</div>
+          <div style="font-size:0.8rem; color:var(--text-mut);">Přepnout vzhled aplikace</div>
+        </div>
+        <label style="position:relative; width:52px; height:28px; cursor:pointer;">
+          <input type="checkbox" id="darkModeToggle" style="opacity:0; width:0; height:0;" />
+          <span
+            style="position:absolute; top:0; left:0; right:0; bottom:0; background:var(--bg-btn-sec-hover); border-radius:14px; transition:.3s;"></span>
+          <span id="dmKnob"
+            style="position:absolute; content:''; height:20px; width:20px; left:4px; bottom:4px; background:var(--text-main); border-radius:50%; transition:.3s;"></span>
+        </label>
+      </div>
+
+      <div class="settings-section-title">Moje zařízení</div>
+      <p class="settings-description">
+        Tvoje data jsou navázaná na bezpečnou relaci tohoto prohlížeče.
+        Pro přístup z jiného zařízení můžeš importovat stejné ID.
       </p>
+      <div
+        style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+        <p style="margin: 0; font-size: 0.85rem; color: var(--text-main); font-weight: 500;">
+          <span style="font-size: 1.1em; margin-right: 4px;">⚠️</span>
+          Doporučujeme si ID zkopírovat a někam uložit (např. do poznámek). Slouží jako záloha pro případ, že promažeš
+          data prohlížeče.
+        </p>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:32px;">
+        <code class="device-id-box" id="deviceIdDisplay"></code>
+        <button class="btn-secondary" id="btnCopyId" style="width: 100%; justify-content: center;">Kopírovat</button>
+        <input type="text" id="importIdInput" placeholder="Vlož ID z jiného zařízení" autocomplete="off"
+          style="width:100%;" />
+        <button class="btn-secondary" id="btnImportId" style="width: 100%; justify-content: center;">Importovat
+          ID</button>
+      </div>
     </div>
-    
-    <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:32px;">
-      <code class="device-id-box" id="deviceIdDisplay"></code>
-      <button class="btn-secondary" id="btnCopyId" style="width: 100%; justify-content: center;">Kopírovat</button>
-      <input type="text" id="importIdInput" placeholder="Vlož ID z jiného zařízení" autocomplete="off" style="width:100%;" />
-      <button class="btn-secondary" id="btnImportId" style="width: 100%; justify-content: center;">Importovat ID</button>
+
+    <div class="settings-footer">
+      <p>v1.2.1</p>
     </div>
   </div>
 
-  <div class="settings-footer">
-    <p>v1.2.1</p>
-  </div>
-</div>
+  <div class="container">
+    <div>
+      <h1>Kalkulátor paliva</h1>
+      <p class="subtitle">Sleduj náklady a kilometry každé jízdy</p>
+    </div>
 
-<div class="container">
-  <div>
-    <h1>Kalkulátor paliva</h1>
-    <p class="subtitle">Sleduj náklady a kilometry každé jízdy</p>
-  </div>
+    <!-- CALCULATOR CARD -->
+    <div class="card">
+      <div class="card-title">Nová jízda</div>
 
-  <!-- CALCULATOR CARD -->
-  <div class="card">
-    <div class="card-title">Nová jízda</div>
-
-    <div class="inputs-grid">
-      <div class="field">
-        <label>Vzdálenost</label>
-        <div class="input-wrap">
-          <input type="number" id="distance" placeholder="0" step="0.1" min="0" />
-          <span class="unit">km</span>
+      <div class="inputs-grid">
+        <div class="field">
+          <label>Vzdálenost</label>
+          <div class="input-wrap">
+            <input type="number" id="distance" placeholder="0" step="0.1" min="0" />
+            <span class="unit">km</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Spotřeba</label>
+          <div class="input-wrap">
+            <input type="number" id="consumption" placeholder="0.0" step="0.1" min="0" value="5.9" />
+            <span class="unit">l/100</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Cena paliva</label>
+          <div class="input-wrap">
+            <input type="number" id="price" placeholder="0.00" step="0.01" min="0" />
+            <span class="unit">Kč/l</span>
+          </div>
+          <div id="priceSuggestion" style="display:none"></div>
         </div>
       </div>
-      <div class="field">
-        <label>Spotřeba</label>
-        <div class="input-wrap">
-          <input type="number" id="consumption" placeholder="0.0" step="0.1" min="0" value="5.9" />
-          <span class="unit">l/100</span>
+
+      <!-- Result -->
+      <div class="result-row">
+        <div class="result-box">
+          <div class="r-label">Spotřebováno</div>
+          <div class="r-value" id="resultLiters">—</div>
+          <div class="r-unit">litrů</div>
+        </div>
+        <div class="result-box highlight">
+          <div class="r-label">Náklady</div>
+          <div class="r-value cost" id="resultCost">—</div>
+          <div class="r-unit">korun</div>
+        </div>
+        <div class="result-box">
+          <div class="r-label">Cena / km</div>
+          <div class="r-value" id="resultPerKm">—</div>
+          <div class="r-unit">Kč/km</div>
         </div>
       </div>
-      <div class="field">
-        <label>Cena paliva</label>
-        <div class="input-wrap">
-          <input type="number" id="price" placeholder="0.00" step="0.01" min="0" />
-          <span class="unit">Kč/l</span>
+
+      <div class="btn-row">
+        <button class="btn-primary" id="btnSave"> Uložit jízdu</button>
+      </div>
+    </div>
+
+    <!-- STATS CARD -->
+    <div class="card">
+      <div class="stats-head">
+        <div class="card-title" style="margin-bottom:0">Statistiky</div>
+        <div class="month-filter">
+          <label>Měsíc:</label>
+          <select id="monthSelect"></select>
+          <button class="btn-secondary" id="btnResetFilter" style="padding:8px 12px; font-size:0.75rem;">Vše</button>
         </div>
-        <div id="priceSuggestion" style="display:none"></div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="s-value" id="statKm">0</div>
+          <div class="s-label">km celkem</div>
+        </div>
+        <div class="stat-box">
+          <div class="s-value" id="statLiters">0</div>
+          <div class="s-label">litrů celkem</div>
+        </div>
+        <div class="stat-box">
+          <div class="s-value" id="statCost">0</div>
+          <div class="s-label">Kč celkem</div>
+        </div>
+        <div class="stat-box">
+          <div class="s-value" id="statTrips">0</div>
+          <div class="s-label">jízd</div>
+        </div>
+        <div class="stat-box">
+          <div class="s-value" id="statAvgKm">0</div>
+          <div class="s-label">průměr km/jízda</div>
+        </div>
+        <div class="stat-box">
+          <div class="s-value" id="statAvgCost">0</div>
+          <div class="s-label">průměr Kč/jízda</div>
+        </div>
       </div>
     </div>
 
-    <!-- Result -->
-    <div class="result-row">
-      <div class="result-box">
-        <div class="r-label">Spotřebováno</div>
-        <div class="r-value" id="resultLiters">—</div>
-        <div class="r-unit">litrů</div>
+    <!-- HISTORY CARD -->
+    <div class="card">
+      <div class="history-head">
+        <div class="card-title" style="margin-bottom:0">Historie jízd</div>
+        <button class="btn-secondary" id="btnClearAll">Vše smazat</button>
       </div>
-      <div class="result-box highlight">
-        <div class="r-label">Náklady</div>
-        <div class="r-value cost" id="resultCost">—</div>
-        <div class="r-unit">korun</div>
-      </div>
-      <div class="result-box">
-        <div class="r-label">Cena / km</div>
-        <div class="r-value" id="resultPerKm">—</div>
-        <div class="r-unit">Kč/km</div>
-      </div>
+      <div class="history-list" id="historyList"></div>
     </div>
 
-    <div class="btn-row">
-      <button class="btn-primary" id="btnSave"> Uložit jízdu</button>
-    </div>
   </div>
 
-  <!-- STATS CARD -->
-  <div class="card">
-    <div class="stats-head">
-      <div class="card-title" style="margin-bottom:0">Statistiky</div>
-      <div class="month-filter">
-        <label>Měsíc:</label>
-        <select id="monthSelect"></select>
-        <button class="btn-secondary" id="btnResetFilter" style="padding:8px 12px; font-size:0.75rem;">Vše</button>
-      </div>
-    </div>
+  <div class="toast" id="toast"></div>
 
-    <div class="stats-grid">
-      <div class="stat-box">
-        <div class="s-value" id="statKm">0</div>
-        <div class="s-label">km celkem</div>
-      </div>
-      <div class="stat-box">
-        <div class="s-value" id="statLiters">0</div>
-        <div class="s-label">litrů celkem</div>
-      </div>
-      <div class="stat-box">
-        <div class="s-value" id="statCost">0</div>
-        <div class="s-label">Kč celkem</div>
-      </div>
-      <div class="stat-box">
-        <div class="s-value" id="statTrips">0</div>
-        <div class="s-label">jízd</div>
-      </div>
-      <div class="stat-box">
-        <div class="s-value" id="statAvgKm">0</div>
-        <div class="s-label">průměr km/jízda</div>
-      </div>
-      <div class="stat-box">
-        <div class="s-value" id="statAvgCost">0</div>
-        <div class="s-label">průměr Kč/jízda</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- HISTORY CARD -->
-  <div class="card">
-    <div class="history-head">
-      <div class="card-title" style="margin-bottom:0">Historie jízd</div>
-      <button class="btn-secondary" id="btnClearAll">Vše smazat</button>
-    </div>
-    <div class="history-list" id="historyList"></div>
-  </div>
-
-</div>
-
-<div class="toast" id="toast"></div>
-
-<script src="script.js"></script>
-<!-- Registrace service workera pro PWA offline funkčnost -->
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js');
-  }
-</script>
+  <script src="script.js"></script>
+  <!-- Registrace service workera pro PWA offline funkčnost -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
+  </script>
 </body>
+
 </html>
