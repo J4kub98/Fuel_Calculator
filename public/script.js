@@ -38,9 +38,8 @@
     const data = await res.json();
     sessionUserId = data.userId;
 
-    if (legacyUserId && options.legacyUserId === undefined) {
-      localStorage.removeItem(LEGACY_USER_ID_KEY);
-    }
+    // Záloha ID v localStorage - prevence ztráty dat po vypršení relace (cookie)
+    localStorage.setItem(LEGACY_USER_ID_KEY, sessionUserId);
 
     return data;
   }
