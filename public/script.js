@@ -74,27 +74,25 @@
     if (!res.ok) throw new Error('Nepodařilo se smazat jízdu');
   }
 
-  // ── Price suggestion ──
-  function getLastPrice() {
+  // ── Last refuelling price ──
+  function getLastRefuelPrice() {
     if (!history.length) return null;
-    return [...history].sort((a, b) => new Date(b.date) - new Date(a.date))[0].price;
+    const lastTrip = [...history].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+
+    // Starší záznamy vznikly před přidáním samostatné ceny tankování.
+    // Jejich cenu jízdy proto použijeme jako rozumný výchozí údaj.
+    return lastTrip.refuel_price ?? lastTrip.refuelPrice ?? lastTrip.price;
   }
 
-  function renderSuggestion() {
-    const lastPrice = getLastPrice();
-    const el = document.getElementById('priceSuggestion');
+  // Do ceny jízdy se dosadí cena z předchozího tankování. Aktuálně tankovaná
+  // cena se ukládá zvlášť a použije se až pro další jízdu.
+  function fillLastPrice() {
+    const lastPrice = getLastRefuelPrice();
     const priceInput = document.getElementById('price');
 
     if (lastPrice !== null && priceInput.value === '') {
-      el.style.display = 'block';
-      el.innerHTML = `<span class="suggestion" id="suggChip"> Minule: <strong>${lastPrice.toFixed(2)} Kč</strong> — použít?</span>`;
-      document.getElementById('suggChip').onclick = () => {
-        priceInput.value = lastPrice.toFixed(2);
-        el.style.display = 'none';
-        calculate();
-      };
-    } else {
-      el.style.display = 'none';
+      priceInput.value = lastPrice.toFixed(2);
+      calculate();
     }
   }
 
@@ -126,7 +124,7 @@
   function setSaveLoading(isLoading) {
     const btn = document.getElementById('btnSave');
     btn.disabled    = isLoading;
-    btn.textContent = isLoading ? ' Ukládám...' : ' Uložit jízdu';
+    btn.textContent = isLoading ? 'Ukládám...' : 'Uložit tankování a jízdu';
   }
 
   // ── Save trip ──
@@ -134,8 +132,9 @@
     const dist  = parseFloat(document.getElementById('distance').value);
     const cons  = parseFloat(document.getElementById('consumption').value);
     const price = parseFloat(document.getElementById('price').value);
+    const refuelPrice = parseFloat(document.getElementById('refuelPrice').value);
 
-    if (!dist || !cons || !price) {
+    if (!dist || !cons || !price || !refuelPrice) {
       showToast(' Vyplň všechna pole!', '#f59e0b', '#451a03');
       return;
     }
@@ -150,6 +149,7 @@
         distance:    dist,
         consumption: cons,
         price:       price,
+        refuelPrice: refuelPrice,
         liters:      result.liters,
         cost:        result.cost,
       });
@@ -157,14 +157,16 @@
       history.push(saved);
 
       document.getElementById('distance').value           = '';
+      document.getElementById('price').value              = '';
+      document.getElementById('refuelPrice').value        = '';
       document.getElementById('resultLiters').textContent = '—';
       document.getElementById('resultCost').textContent   = '—';
       document.getElementById('resultPerKm').textContent  = '—';
 
-      renderSuggestion();
+      fillLastPrice();
       renderHistory();
       renderStats();
-      showToast(' Jízda uložena!');
+      showToast(' Tankování a jízda uloženy!');
     } catch {
       showToast(' Chyba při ukládání!', '#f59e0b', '#451a03');
     } finally {
@@ -254,6 +256,10 @@
       const day        = d.getDate();
       const monthShort = d.toLocaleDateString('cs-CZ', { month: 'short' });
       const time       = d.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+      const refuelPrice = trip.refuel_price ?? trip.refuelPrice;
+      const refuelInfo  = refuelPrice !== undefined && refuelPrice !== null
+        ? ` &nbsp;·&nbsp; Tankování: ${Number(refuelPrice).toFixed(2)} Kč/l`
+        : '';
 
       return `
         <div class="history-item">
@@ -264,7 +270,7 @@
           </div>
           <div class="hi-body">
             <div class="hi-km">${trip.distance.toFixed(1)} km</div>
-            <div class="hi-meta">${trip.consumption} l/100 &nbsp;·&nbsp; ${trip.price.toFixed(2)} Kč/l</div>
+            <div class="hi-meta">${trip.consumption} l/100 &nbsp;·&nbsp; Pro jízdu: ${trip.price.toFixed(2)} Kč/l${refuelInfo}</div>
           </div>
           <div class="hi-cost">
             <div class="amount">${trip.cost.toFixed(2)} Kč</div>
@@ -290,7 +296,7 @@
       history = history.filter(t => t.id !== id);
       renderHistory();
       renderStats();
-      renderSuggestion();
+      fillLastPrice();
       showToast(' Jízda smazána', '#ef4444', '#450a0a');
     } catch {
       showToast(' Chyba při mazání!', '#f59e0b', '#451a03');
@@ -304,9 +310,12 @@
       try {
         await Promise.all(history.map(t => apiDeleteTrip(t.id)));
         history = [];
+        document.getElementById('price').value = '';
+        document.getElementById('refuelPrice').value = '';
+        priceMirrorsRefuelPrice = false;
         renderHistory();
         renderStats();
-        renderSuggestion();
+        fillLastPrice();
         showToast(' Historie smazána', '#ef4444', '#450a0a');
       } catch {
         showToast(' Chyba při mazání!', '#f59e0b', '#451a03');
@@ -317,11 +326,26 @@
   // ── Event listeners ──
   document.getElementById('btnSave').onclick = saveTrip;
 
-  ['distance', 'consumption', 'price'].forEach(id => {
+  ['distance', 'consumption'].forEach(id => {
     document.getElementById(id).addEventListener('input', calculate);
   });
 
-  document.getElementById('price').addEventListener('focus', renderSuggestion);
+  let priceMirrorsRefuelPrice = false;
+  document.getElementById('price').addEventListener('input', () => {
+    priceMirrorsRefuelPrice = false;
+    calculate();
+  });
+
+  document.getElementById('refuelPrice').addEventListener('input', () => {
+    // U prvního záznamu není k dispozici dřívější cena. Použijeme proto
+    // aktuálně zadanou cenu také pro výpočet této jízdy.
+    if (getLastRefuelPrice() === null &&
+        (document.getElementById('price').value === '' || priceMirrorsRefuelPrice)) {
+      document.getElementById('price').value = document.getElementById('refuelPrice').value;
+      priceMirrorsRefuelPrice = true;
+      calculate();
+    }
+  });
 
   document.getElementById('monthSelect').addEventListener('change', () => {
     renderHistory();
@@ -448,7 +472,9 @@
         await fetchTrips();
         document.getElementById('deviceIdDisplay').textContent = sessionUserId || '—';
         importInput.value = '';
-        renderSuggestion();
+        document.getElementById('price').value = '';
+        document.getElementById('refuelPrice').value = '';
+        fillLastPrice();
         renderHistory();
         renderStats();
         showToast(' ID importováno, data načtena');
@@ -476,7 +502,7 @@
     } catch {
       showToast(' Nepodařilo se inicializovat aplikaci', '#f59e0b', '#451a03');
     }
-    renderSuggestion();
+    fillLastPrice();
     renderHistory();
     renderStats();
     initSettings();

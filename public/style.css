@@ -118,6 +118,60 @@
       margin-bottom: 24px;
     }
 
+    .refuel-step {
+      margin-bottom: 24px;
+      padding: 0 0 28px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .step-heading {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .step-index {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 28px;
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--border-soft);
+      border-radius: 50%;
+      background: var(--bg-card);
+      color: var(--text-main);
+      font-size: 0.8rem;
+      font-weight: 800;
+    }
+
+    .step-title {
+      color: var(--text-main);
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+    }
+
+    .refuel-step .field input {
+      background: var(--bg-body);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .journey-step-heading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 20px;
+      color: var(--text-main);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .journey-step-heading .step-index {
+      background: var(--bg-input);
+    }
+
     /* Na tabletách přejdi na 2-sloupcový layout s poslední položkou přes celou šířku */
     @media (max-width: 560px) {
       .inputs-grid {
@@ -185,28 +239,11 @@
       pointer-events: none;
     }
 
-    /* price suggestion chip */
-    .suggestion {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
+    /* Price input hint */
+    .input-hint {
       margin-top: 8px;
-      padding: 6px 14px;
-      background: var(--bg-body);
-      border-radius: 99px;
       font-size: 0.8rem;
-      font-weight: 600;
       color: var(--text-mut);
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .suggestion:hover { background: var(--bg-btn-sec-hover); color: var(--text-main); }
-
-    @media (min-width: 768px) {
-      .suggestion {
-        white-space: nowrap;
-      }
     }
 
     /* ── Result row ── */

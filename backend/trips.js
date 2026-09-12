@@ -60,14 +60,14 @@ async function handlePost(req, res) {
       .json({ error: 'Neplatná data', details: parsed.error.flatten() });
   }
 
-  const { date, distance, consumption, price, liters, cost } = parsed.data;
+  const { date, distance, consumption, price, refuelPrice, liters, cost } = parsed.data;
   const id = randomUUID();
   const db = getDb();
 
   await db.execute({
-    sql: `INSERT INTO trips (id, user_id, date, distance, consumption, price, liters, cost)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    args: [id, session.userId, date, distance, consumption, price, liters, cost],
+    sql: `INSERT INTO trips (id, user_id, date, distance, consumption, price, refuel_price, liters, cost)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [id, session.userId, date, distance, consumption, price, refuelPrice, liters, cost],
   });
 
   return res.status(201).json({
@@ -76,6 +76,7 @@ async function handlePost(req, res) {
     distance,
     consumption,
     price,
+    refuel_price: refuelPrice,
     liters,
     cost,
   });

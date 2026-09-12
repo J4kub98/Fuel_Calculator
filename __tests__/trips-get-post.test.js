@@ -36,6 +36,7 @@ const VALID_BODY = {
   distance: 150,
   consumption: 5.9,
   price: 38.5,
+  refuelPrice: 39.9,
   liters: 8.85,
   cost: 340.73,
 };
@@ -111,13 +112,14 @@ describe('POST /api/trips', () => {
       expect.objectContaining({
         id: expect.any(String),
         distance: 150,
+        refuel_price: 39.9,
         cost: 340.73,
       })
     );
     expect(mockExecute).toHaveBeenCalledWith(
       expect.objectContaining({
         sql: expect.stringContaining('INSERT INTO trips'),
-        args: expect.arrayContaining([VALID_USER]),
+        args: expect.arrayContaining([VALID_USER, 39.9]),
       })
     );
   });

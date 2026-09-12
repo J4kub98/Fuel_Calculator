@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Fuel Calculator">
   <link rel="apple-touch-icon" href="/icon-192.png">
-  <link rel="stylesheet" href="style.css?v=10">
+  <link rel="stylesheet" href="style.css?v=15">
 </head>
 
 <body>
@@ -84,7 +84,7 @@
     </div>
 
     <div class="settings-footer">
-      <p>v1.2.1</p>
+      <p>v1.2.2</p>
     </div>
   </div>
 
@@ -96,7 +96,27 @@
 
     <!-- CALCULATOR CARD -->
     <div class="card">
-      <div class="card-title">Nová jízda</div>
+      <div class="card-title">Nový záznam</div>
+
+      <section class="refuel-step" aria-labelledby="refuelStepTitle">
+        <div class="step-heading">
+          <span class="step-index" aria-hidden="true">1</span>
+          <h2 class="step-title" id="refuelStepTitle">Aktuální tankování</h2>
+        </div>
+        <div class="field refuel-price-field">
+          <label>Cena za litr</label>
+          <div class="input-wrap">
+            <input type="number" id="refuelPrice" placeholder="0.00" step="0.01" min="0" inputmode="decimal" aria-describedby="refuelPriceHint" />
+            <span class="unit">Kč/l</span>
+          </div>
+          <div id="refuelPriceHint" class="input-hint">Použijeme při příští jízdě.</div>
+        </div>
+      </section>
+
+      <div class="journey-step-heading">
+        <span class="step-index" aria-hidden="true">2</span>
+        <span>Jízda od minulého tankování</span>
+      </div>
 
       <div class="inputs-grid">
         <div class="field">
@@ -116,10 +136,10 @@
         <div class="field">
           <label>Cena paliva</label>
           <div class="input-wrap">
-            <input type="number" id="price" placeholder="0.00" step="0.01" min="0" />
+            <input type="number" id="price" placeholder="0.00" step="0.01" min="0" aria-describedby="priceHint" />
             <span class="unit">Kč/l</span>
           </div>
-          <div id="priceSuggestion" style="display:none"></div>
+          <div id="priceHint" class="input-hint">Doplněno z minulého tankování.</div>
         </div>
       </div>
 
@@ -143,7 +163,7 @@
       </div>
 
       <div class="btn-row">
-        <button class="btn-primary" id="btnSave"> Uložit jízdu</button>
+        <button class="btn-primary" id="btnSave">Uložit tankování a jízdu</button>
       </div>
     </div>
 
@@ -199,7 +219,7 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="script.js"></script>
+  <script src="script.js?v=1.2.2"></script>
   <!-- Registrace service workera pro PWA offline funkčnost -->
   <script>
     if ('serviceWorker' in navigator) {

@@ -29,6 +29,7 @@ describe('tripSchema', () => {
     distance: 150,
     consumption: 5.9,
     price: 38.5,
+    refuelPrice: 39.9,
     liters: 8.85,
     cost: 340.73,
   };
@@ -47,6 +48,12 @@ describe('tripSchema', () => {
 
   it('odmítne příliš vysokou cenu paliva (> 500)', () => {
     expect(tripSchema.safeParse({ ...valid, price: 501 }).success).toBe(false);
+  });
+
+  it('odmítne chybějící nebo neplatnou cenu při tankování', () => {
+    const { refuelPrice, ...missing } = valid;
+    expect(tripSchema.safeParse(missing).success).toBe(false);
+    expect(tripSchema.safeParse({ ...valid, refuelPrice: 0 }).success).toBe(false);
   });
 
   it('odmítne chybějící pole', () => {
