@@ -1,24 +1,28 @@
 // Service Worker pro Fuel Calculator PWA
 // Zajišťuje offline funkčnost a cachování statických assetů.
 //
-// Při každém nasazení nové verze frontendu zvyš APP_VERSION — změní se tím
-// název cache a uživatelům se načtou nové soubory.
+// APP_VERSION je verze aplikace zobrazená uživateli (Nastavení, package.json).
+// BUILD zvyš při KAŽDÉM nasazení změněného frontendu — změní se název cache
+// i ?v= u souborů, takže prohlížeče stáhnou nové verze. Stejnou hodnotu
+// `${APP_VERSION}-${BUILD}` je potřeba přepsat i v index.html a manifest.json.
 const APP_VERSION = '2.0.0';
-const CACHE_NAME = `fuel-tool-${APP_VERSION}`;
+const BUILD = 2;
+const ASSET_VERSION = `${APP_VERSION}-${BUILD}`;
+const CACHE_NAME = `fuel-tool-${ASSET_VERSION}`;
 
 // Statické assety, které se cachují při instalaci SW
 // (stejné URL včetně ?v=, jaké požaduje index.html)
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  `/style.css?v=${APP_VERSION}`,
-  `/script.js?v=${APP_VERSION}`,
-  `/theme.js?v=${APP_VERSION}`,
-  '/manifest.json',
-  '/icon.svg',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/apple-touch-icon.png',
+  `/style.css?v=${ASSET_VERSION}`,
+  `/script.js?v=${ASSET_VERSION}`,
+  `/theme.js?v=${ASSET_VERSION}`,
+  `/manifest.json?v=${ASSET_VERSION}`,
+  `/icon.svg?v=${ASSET_VERSION}`,
+  `/icon-192.png?v=${ASSET_VERSION}`,
+  `/icon-512.png?v=${ASSET_VERSION}`,
+  `/apple-touch-icon.png?v=${ASSET_VERSION}`,
   '/fonts/inter-latin-wght-normal.woff2',
   '/fonts/inter-latin-ext-wght-normal.woff2',
 ];

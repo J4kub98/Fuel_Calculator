@@ -14,6 +14,15 @@ and a monochrome palette with one electric-blue accent. Light, dark and system t
 Design tokens live at the top of `public/style.css`. The Inter font is self-hosted in `public/fonts`
 (SIL Open Font License) because the CSP blocks third-party origins.
 
+## Releasing a new frontend version
+
+The service worker caches the app, so every deploy that changes files in `public/`
+needs a new build number, otherwise browsers keep serving the old files:
+
+1. In `public/sw.js` raise `BUILD` (and `APP_VERSION` when the visible version changes).
+2. Replace the `?v=<APP_VERSION>-<BUILD>` value in `public/index.html` and `public/manifest.json`.
+3. When the visible version changes, update it in `package.json` and in the settings footer in `public/index.html`.
+
 ## Stack
 
 - Frontend: vanilla HTML/CSS/JS

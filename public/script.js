@@ -1335,6 +1335,17 @@
 
   // Registrace service workeru pro PWA offline funkčnost
   if ('serviceWorker' in navigator) {
+    // Když převezme kontrolu nová verze, načteme stránku znovu, aby se hned
+    // ukázaly nové soubory. Rozepsaný formulář ale nepřerušíme.
+    const hadController = Boolean(navigator.serviceWorker.controller);
+    let reloading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      const formTouched = ['refuelPrice', 'distance'].some((id) => $(id).value !== '');
+      if (!hadController || reloading || formTouched || openSheets.length) return;
+      reloading = true;
+      window.location.reload();
+    });
+
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     });
