@@ -1,15 +1,19 @@
 // Service Worker pro Fuel Calculator PWA
 // Zajišťuje offline funkčnost a cachování statických assetů.
-
-const CACHE_NAME = 'fuel-tool-v12';
+//
+// Při každém nasazení nové verze frontendu zvyš APP_VERSION — změní se tím
+// název cache a uživatelům se načtou nové soubory.
+const APP_VERSION = '2.0.0';
+const CACHE_NAME = `fuel-tool-${APP_VERSION}`;
 
 // Statické assety, které se cachují při instalaci SW
+// (stejné URL včetně ?v=, jaké požaduje index.html)
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/style.css',
-  '/script.js',
-  '/theme.js',
+  `/style.css?v=${APP_VERSION}`,
+  `/script.js?v=${APP_VERSION}`,
+  `/theme.js?v=${APP_VERSION}`,
   '/manifest.json',
   '/icon.svg',
   '/icon-192.png',
@@ -43,33 +47,51 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch — cache-first pro statiku, network-first pro API
+function offlineJson() {
+  return new Response(JSON.stringify({ error: 'offline' }), {
+    status: 503,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  const url = new URL(request.url);
 
-  // API volání: network-first, při výpadku vrátíme JSON s chybou
+  // Zápisy (POST/DELETE) nikdy neobsluhujeme — při výpadku musí selhat,
+  // aby aplikace neoznámila úspěch, který se nestal.
+  if (request.method !== 'GET') return;
+
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+
+  // API: network-first, offline fallback z cache, jinak 503
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          // Úspěšnou GET odpověď si uložíme do cache pro případ offline
-          if (request.method === 'GET' && response.ok) {
+          if (response.ok) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           }
           return response;
         })
-        .catch(() =>
-          // Zkus cache, jinak vrať offline odpověď
-          caches.match(request).then(
-            (cached) =>
-              cached ||
-              new Response(JSON.stringify({ error: 'offline', trips: [] }), {
-                headers: { 'Content-Type': 'application/json' },
-              })
-          )
-        )
+        .catch(() => caches.match(request).then((cached) => cached || offlineJson()))
+    );
+    return;
+  }
+
+  // Navigace (HTML): network-first, aby se nová verze projevila hned
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put('/', clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match('/').then((cached) => cached || caches.match('/index.html')))
     );
     return;
   }
@@ -78,7 +100,6 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(request).then(
       (cached) => cached || fetch(request).then((response) => {
-        // Ulož do cache pro příště
         if (response.ok) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
