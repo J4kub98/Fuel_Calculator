@@ -49,6 +49,14 @@
       "dest": "/backend/trips/[id].js?id=$1"
     },
     {
+      "src": "/api/passkey",
+      "dest": "/backend/passkey.js"
+    },
+    {
+      "src": "/api/passkey/(register|login)/(options|verify)",
+      "dest": "/backend/passkey.js?flow=$1&step=$2"
+    },
+    {
       "handle": "filesystem"
     },
     {

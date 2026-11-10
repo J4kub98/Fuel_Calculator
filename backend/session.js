@@ -42,6 +42,8 @@ module.exports = async function handler(req, res) {
 
     const existing = getSession(req);
     if (existing && !forceSwitch) {
+      // Klouzavá platnost: každé otevření aplikace prodlouží cookie o celou dobu platnosti
+      res.setHeader('Set-Cookie', createSessionCookie(existing.userId));
       return res.status(200).json({ userId: existing.userId, migrated: false, switched: false });
     }
 

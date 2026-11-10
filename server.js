@@ -14,6 +14,7 @@ const handlers = {
   session: require('./backend/session'),
   trips: require('./backend/trips'),
   tripById: require('./backend/trips/[id]'),
+  passkey: require('./backend/passkey'),
 };
 
 const MIME_TYPES = {
@@ -168,6 +169,20 @@ async function handleApi(req, res, pathname, query) {
     req.query = { ...query, id: decodeURIComponent(match[1]) };
     req.body = await parseBody(req);
     return handlers.tripById(req, res);
+  }
+
+  if (pathname === '/api/passkey') {
+    if (method !== 'GET') return sendMethodNotAllowed(res);
+    req.query = query;
+    return handlers.passkey(req, res);
+  }
+
+  const passkeyMatch = pathname.match(/^\/api\/passkey\/(register|login)\/(options|verify)$/);
+  if (passkeyMatch) {
+    if (method !== 'POST') return sendMethodNotAllowed(res);
+    req.query = { ...query, flow: passkeyMatch[1], step: passkeyMatch[2] };
+    req.body = await parseBody(req);
+    return handlers.passkey(req, res);
   }
 
   return sendNotFound(res);

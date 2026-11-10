@@ -6,7 +6,7 @@
 // i ?v= u souborů, takže prohlížeče stáhnou nové verze. Stejnou hodnotu
 // `${APP_VERSION}-${BUILD}` je potřeba přepsat i v index.html a manifest.json.
 const APP_VERSION = '2.0.0';
-const BUILD = 2;
+const BUILD = 3;
 const ASSET_VERSION = `${APP_VERSION}-${BUILD}`;
 const CACHE_NAME = `fuel-tool-${ASSET_VERSION}`;
 

@@ -75,7 +75,7 @@ describe('POST /api/session', () => {
     });
   });
 
-  it('pri existujici session bez force vrati puvodni userId', async () => {
+  it('pri existujici session bez force vrati puvodni userId a obnovi platnost cookie', async () => {
     const existingUserId = '550e8400-e29b-41d4-a716-446655440000';
     const req = {
       method: 'POST',
@@ -87,7 +87,10 @@ describe('POST /api/session', () => {
     await handler(req, res);
 
     expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.setHeader).not.toHaveBeenCalledWith('Set-Cookie', expect.any(String));
+    // Klouzavá platnost: cookie pro stejné ID se znovu vydá s plnou dobou platnosti
+    const setCookie = res.setHeader.mock.calls.find(([key]) => key === 'Set-Cookie');
+    expect(setCookie[1]).toContain('fuel_sid=');
+    expect(setCookie[1]).toContain(`Max-Age=${60 * 60 * 24 * 400}`);
     expect(res.json).toHaveBeenCalledWith({
       userId: existingUserId,
       migrated: false,

@@ -39,6 +39,24 @@ On first visit frontend calls `POST /api/session`.
 
 This prevents users from changing identity via devtools and accessing other users' data.
 
+The session cookie is valid for 400 days (the maximum browsers allow) and is renewed every time
+the app opens, so it does not expire while the app is in use.
+
+### Backup with passkeys
+
+Clearing browser data or reinstalling the home-screen app (on iOS it has its own storage) removes
+the cookie and the local ID backup. To survive that, users can link a passkey in Settings →
+"Záloha dat". The passkey is stored in iCloud Keychain / Google Password Manager; restoring signs
+the device back into the original identity and moves trips created on the device in the meantime
+into it.
+
+- Endpoints: `GET /api/passkey`, `POST /api/passkey/(register|login)/(options|verify)`
+  (`backend/passkey.js`, helpers in `lib/webauthn.js`, table `passkeys`).
+- A passkey is bound to the domain it was created on. If the app moves to another domain
+  (e.g. a custom domain), existing passkeys stop working there and users need to create new ones.
+- Optional `WEBAUTHN_ORIGINS` (comma-separated, e.g. `https://fuel-calculator-lilac.vercel.app`)
+  restricts which origins may use passkeys. When unset, the request host is used.
+
 ## Local development
 
 ### 1. Install dependencies

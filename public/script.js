@@ -195,8 +195,211 @@
   function clearCachedTrips() {
     if (!('caches' in window)) return;
     caches.keys()
-      .then((keys) => Promise.all(keys.map((k) => caches.open(k).then((c) => c.delete('/api/trips')))))
+      .then((keys) => Promise.all(keys.map((k) => caches.open(k).then((c) => Promise.all([
+        c.delete('/api/trips'),
+        c.delete('/api/passkey'),
+      ])))))
       .catch(() => {});
+  }
+
+  // ── Přístupové klíče (passkeys) ──
+  const passkeySupported = Boolean(
+    window.PublicKeyCredential && navigator.credentials && window.isSecureContext
+  );
+  const NUDGE_DISMISSED_KEY = 'fuel_backup_nudge_dismissed';
+  let passkeyCount = null; // null = zatím nevíme
+  let passkeyBusy = false;
+
+  function b64urlEncode(buffer) {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  function b64urlDecode(value) {
+    const base64 = value.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+    const binary = atob(padded);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes.buffer;
+  }
+
+  function toCreationOptions(json) {
+    if (typeof PublicKeyCredential.parseCreationOptionsFromJSON === 'function') {
+      return PublicKeyCredential.parseCreationOptionsFromJSON(json);
+    }
+    return {
+      ...json,
+      challenge: b64urlDecode(json.challenge),
+      user: { ...json.user, id: b64urlDecode(json.user.id) },
+      excludeCredentials: (json.excludeCredentials || []).map((c) => ({ ...c, id: b64urlDecode(c.id) })),
+    };
+  }
+
+  function toRequestOptions(json) {
+    if (typeof PublicKeyCredential.parseRequestOptionsFromJSON === 'function') {
+      return PublicKeyCredential.parseRequestOptionsFromJSON(json);
+    }
+    return {
+      ...json,
+      challenge: b64urlDecode(json.challenge),
+      allowCredentials: (json.allowCredentials || []).map((c) => ({ ...c, id: b64urlDecode(c.id) })),
+    };
+  }
+
+  function credentialToJSON(credential) {
+    if (typeof credential.toJSON === 'function') {
+      try {
+        return credential.toJSON();
+      } catch {
+        // Některá rozšíření správců hesel toJSON nepodporují — převedeme ručně.
+      }
+    }
+    const r = credential.response;
+    const json = {
+      id: credential.id,
+      rawId: b64urlEncode(credential.rawId),
+      type: credential.type,
+      authenticatorAttachment: credential.authenticatorAttachment || undefined,
+      clientExtensionResults: credential.getClientExtensionResults ? credential.getClientExtensionResults() : {},
+      response: { clientDataJSON: b64urlEncode(r.clientDataJSON) },
+    };
+    if (r.attestationObject) {
+      json.response.attestationObject = b64urlEncode(r.attestationObject);
+      if (typeof r.getTransports === 'function') json.response.transports = r.getTransports();
+    } else {
+      json.response.authenticatorData = b64urlEncode(r.authenticatorData);
+      json.response.signature = b64urlEncode(r.signature);
+      if (r.userHandle) json.response.userHandle = b64urlEncode(r.userHandle);
+    }
+    return json;
+  }
+
+  async function postJSON(url, body) {
+    const res = await fetch(url, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {}),
+    });
+    let data = null;
+    try {
+      data = await res.json();
+    } catch {
+      // Prázdná nebo neplatná odpověď
+    }
+    if (!res.ok) throw new Error((data && data.error) || 'Něco se nepovedlo');
+    return data;
+  }
+
+  async function refreshPasskeyStatus() {
+    if (!passkeySupported) return;
+    try {
+      const res = await fetch('/api/passkey', { credentials: 'same-origin' });
+      if (!res.ok) return;
+      const data = await res.json();
+      passkeyCount = Number(data.count) || 0;
+    } catch {
+      // Offline — stav necháme beze změny
+    }
+    renderPasskeyUI();
+    renderHistory();
+  }
+
+  function isNudgeDismissed() {
+    try {
+      return localStorage.getItem(NUDGE_DISMISSED_KEY) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  function renderPasskeyUI() {
+    $('passkeySection').hidden = !passkeySupported;
+    document.querySelectorAll('[data-passkey-only]').forEach((el) => { el.hidden = !passkeySupported; });
+    if (!passkeySupported) return;
+
+    const hasKey = passkeyCount > 0;
+    $('passkeyStatus').hidden = !hasKey;
+    const registerBtn = $('btnPasskeyRegister');
+    registerBtn.classList.toggle('list-btn-accent', !hasKey);
+    $('btnPasskeyRegisterText').textContent = hasKey
+      ? 'Přidat další přístupový klíč'
+      : 'Zálohovat přes Face ID / otisk';
+  }
+
+  function setPasskeyBusy(busy) {
+    passkeyBusy = busy;
+    document.querySelectorAll('[data-passkey-register], [data-passkey-login]').forEach((el) => {
+      el.disabled = busy;
+    });
+  }
+
+  function handlePasskeyError(err) {
+    const name = err && err.name;
+    if (name === 'NotAllowedError' || name === 'AbortError') return; // zrušeno uživatelem
+    if (name === 'InvalidStateError') {
+      showToast('Tenhle přístupový klíč už máš uložený', 'info');
+      return;
+    }
+    showToast(navigator.onLine === false
+      ? 'Jsi offline — zkus to po připojení'
+      : ((err && err.message) || 'Přístupový klíč se nepovedl'), 'error');
+  }
+
+  async function registerPasskey() {
+    if (!passkeySupported || passkeyBusy) return;
+    setPasskeyBusy(true);
+    try {
+      const options = await postJSON('/api/passkey/register/options');
+      const credential = await navigator.credentials.create({ publicKey: toCreationOptions(options) });
+      const result = await postJSON('/api/passkey/register/verify', credentialToJSON(credential));
+      passkeyCount = result.count;
+      renderPasskeyUI();
+      renderHistory();
+      showToast('Záloha je zapnutá');
+    } catch (err) {
+      handlePasskeyError(err);
+    } finally {
+      setPasskeyBusy(false);
+    }
+  }
+
+  async function loginWithPasskey() {
+    if (!passkeySupported || passkeyBusy) return;
+    setPasskeyBusy(true);
+    try {
+      const options = await postJSON('/api/passkey/login/options');
+      const credential = await navigator.credentials.get({ publicKey: toRequestOptions(options) });
+      const result = await postJSON('/api/passkey/login/verify', credentialToJSON(credential));
+
+      sessionUserId = result.userId;
+      localStorage.setItem(LEGACY_USER_ID_KEY, sessionUserId);
+      clearCachedTrips();
+      await fetchTrips();
+
+      $('deviceIdDisplay').textContent = sessionUserId || '—';
+      $('price').value = '';
+      $('refuelPrice').value = '';
+      priceMirrorsRefuelPrice = false;
+      priceAutoFilled = false;
+      loadFailed = false;
+      selectedMonth = null;
+      renderAll();
+      fillLastPrice();
+      await refreshPasskeyStatus();
+
+      if ($('settingsSheet').open) await closeSheet($('settingsSheet'));
+      showToast(result.merged
+        ? `Data obnovena · přidáno ${result.merged} ${plural(result.merged, 'jízda', 'jízdy', 'jízd')} z tohoto zařízení`
+        : 'Data obnovena');
+    } catch (err) {
+      handlePasskeyError(err);
+    } finally {
+      setPasskeyBusy(false);
+    }
   }
 
   // ── Last refuelling price ──
@@ -717,6 +920,7 @@
           <p class="empty-title">Zatím žádné jízdy</p>
           <p class="empty-text">Ulož první tankování a tady uvidíš přehled všech jízd.</p>
           <button type="button" class="btn btn-primary btn-pill" data-goto="entry">${icon('i-plus', 18)}<span>Přidat jízdu</span></button>
+          ${passkeySupported ? `<button type="button" class="btn btn-ghost btn-pill" data-passkey-login>${icon('i-restore', 18)}<span>Obnovit z přístupového klíče</span></button>` : ''}
         </div>`;
       return;
     }
@@ -746,7 +950,20 @@
       current.total += Number(trip.cost);
     });
 
-    el.innerHTML = groups.map((g) => `
+    // Výzva k záloze, dokud uživatel nemá přístupový klíč
+    const nudge = passkeySupported && passkeyCount === 0 && !isNudgeDismissed()
+      ? `<div class="nudge" role="region" aria-label="Záloha dat">
+          <span class="nudge-icon">${icon('i-key', 20)}</span>
+          <div>
+            <p class="nudge-title">Zálohuj si historii</p>
+            <p class="nudge-sub">Jedním dotykem přes Face ID nebo otisk. O jízdy nepřijdeš ani po přeinstalaci nebo na novém telefonu.</p>
+          </div>
+          <button type="button" class="pill-btn pill-btn-accent" data-passkey-register>Zálohovat</button>
+          <button type="button" class="icon-btn icon-btn-sm nudge-close" data-nudge-dismiss aria-label="Skrýt výzvu k záloze">${icon('i-close', 14)}</button>
+        </div>`
+      : '';
+
+    el.innerHTML = nudge + groups.map((g) => `
       <section class="day">
         <h2 class="day-head">
           <span>${escapeHTML(dayLabel(g.date))}</span>
@@ -1167,6 +1384,7 @@
         selectedMonth = null;
         renderAll();
         fillLastPrice();
+        refreshPasskeyStatus();
         showToast('ID importováno, data načtena');
       } catch (err) {
         showToast((err && err.message) || 'Import se nepovedl', 'error');
@@ -1263,6 +1481,20 @@
         openTrip(tripBtn.dataset.tripId);
         return;
       }
+      if (e.target.closest('[data-passkey-register]')) {
+        registerPasskey();
+        return;
+      }
+      if (e.target.closest('[data-passkey-login]')) {
+        loginWithPasskey();
+        return;
+      }
+      if (e.target.closest('[data-nudge-dismiss]')) {
+        try { localStorage.setItem(NUDGE_DISMISSED_KEY, '1'); } catch { /* jen pro tuto relaci */ }
+        renderHistory();
+        $('historyTitle').focus({ preventScroll: true });
+        return;
+      }
       if (e.target.closest('[data-retry]')) {
         loadData();
         return;
@@ -1293,6 +1525,7 @@
     initNavigation();
     initSettings();
     initThemeControl();
+    renderPasskeyUI();
     switchView(viewFromHash(), { initial: true });
     calculate();
     renderAll();
@@ -1321,6 +1554,7 @@
     isLoading = false;
     renderAll();
     fillLastPrice();
+    if (!loadFailed) refreshPasskeyStatus();
 
     // U prvního tankování zadaného během načítání doplníme cenu jízdy
     if (!loadFailed && getLastRefuelPrice() === null && $('price').value === '' && $('refuelPrice').value !== '') {
