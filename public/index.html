@@ -26,9 +26,6 @@
 
 <body>
   <svg class="sprite" aria-hidden="true" focusable="false">
-    <symbol id="i-drop" viewBox="0 0 24 24">
-      <path d="M12 3.2c-.9 1.3-6 7.4-6 11.3a6 6 0 0 0 12 0c0-3.9-5.1-10-6-11.3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
-    </symbol>
     <symbol id="i-plus" viewBox="0 0 24 24">
       <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
     </symbol>
@@ -74,11 +71,7 @@
   <!-- Horní lišta — kompaktní titulek se objeví po odscrollování velkého nadpisu -->
   <header class="topbar" id="topbar">
     <div class="topbar-inner">
-      <div class="brand" aria-hidden="true">
-        <span class="brand-mark">
-          <svg width="16" height="16"><use href="#i-drop" /></svg>
-        </span>
-      </div>
+      <span aria-hidden="true"></span>
       <div class="topbar-title" id="topbarTitle" aria-hidden="true">Nová jízda</div>
       <button class="icon-btn" id="btnOpenSettings" type="button" aria-label="Nastavení" aria-haspopup="dialog">
         <svg width="20" height="20" aria-hidden="true"><use href="#i-gear" /></svg>
@@ -90,130 +83,118 @@
 
     <!-- ── NOVÁ JÍZDA ── -->
     <section class="view is-active" id="view-entry" data-title="Nová jízda" aria-labelledby="entryTitle">
-      <h1 class="large-title" id="entryTitle">Nová jízda</h1>
+      <h1 class="large-title" id="entryTitle" tabindex="-1">Nová jízda</h1>
 
       <div class="hero" id="calcHero">
         <div class="hero-label">Náklady jízdy</div>
-        <div class="amount amount-xl is-empty" id="resultCost">
-          <span class="amount-int">0</span><span class="amount-dec">,00</span><span class="amount-cur">Kč</span>
-        </div>
-        <div class="hero-meta">
-          <div class="meta">
-            <span class="meta-label">Spotřebováno</span>
-            <span class="meta-value" id="resultLiters">—</span>
-          </div>
-          <span class="meta-sep" aria-hidden="true"></span>
-          <div class="meta">
-            <span class="meta-label">Cena za km</span>
-            <span class="meta-value" id="resultPerKm">—</span>
-          </div>
-        </div>
+        <div class="amount amount-xl is-empty" id="resultCost"></div>
+        <div class="hero-sub is-empty" id="resultSummary" aria-hidden="true"></div>
+        <div class="visually-hidden" id="calcLive" aria-live="polite"></div>
       </div>
 
       <form class="entry-form" id="entryForm" novalidate>
-        <div class="group-head">
-          <span class="step" aria-hidden="true">1</span>
-          <h2 class="group-title" id="refuelGroupTitle">Dnešní tankování</h2>
-        </div>
+        <h2 class="section-title" id="refuelGroupTitle">Dnešní tankování</h2>
         <div class="group" role="group" aria-labelledby="refuelGroupTitle">
           <label class="row" for="refuelPrice">
-            <span class="row-label">Cena za litr</span>
+            <span class="row-text">
+              <span class="row-label">Cena za litr</span>
+              <span class="row-hint" id="refuelPriceHint" data-hint="Použijeme ji u příští jízdy">Použijeme ji u příští jízdy</span>
+            </span>
             <span class="row-field">
-              <input class="row-input" type="text" id="refuelPrice" placeholder="0,00" autocomplete="off" inputmode="decimal" enterkeyhint="next" aria-describedby="refuelPriceHint" />
+              <input class="row-input" type="text" id="refuelPrice" placeholder="0,00" autocomplete="off"
+                inputmode="decimal" enterkeyhint="next" aria-describedby="refuelPriceHint" />
               <span class="row-unit">Kč/l</span>
             </span>
           </label>
         </div>
-        <p class="group-foot" id="refuelPriceHint">Uložíme ji a použijeme pro výpočet příští jízdy.</p>
 
-        <div class="group-head">
-          <span class="step" aria-hidden="true">2</span>
-          <h2 class="group-title" id="tripGroupTitle">Jízda od minulého tankování</h2>
-        </div>
+        <h2 class="section-title" id="tripGroupTitle">Jízda od minulého tankování</h2>
         <div class="group" role="group" aria-labelledby="tripGroupTitle">
           <label class="row" for="distance">
-            <span class="row-label">Vzdálenost</span>
+            <span class="row-text">
+              <span class="row-label">Vzdálenost</span>
+              <span class="row-hint" id="distanceHint" data-hint=""></span>
+            </span>
             <span class="row-field">
-              <input class="row-input" type="text" id="distance" placeholder="0" autocomplete="off" inputmode="decimal" enterkeyhint="next" />
+              <input class="row-input" type="text" id="distance" placeholder="0" autocomplete="off"
+                inputmode="decimal" enterkeyhint="next" aria-describedby="distanceHint" />
               <span class="row-unit">km</span>
             </span>
           </label>
           <label class="row" for="consumption">
-            <span class="row-label">Spotřeba</span>
+            <span class="row-text">
+              <span class="row-label">Spotřeba</span>
+              <span class="row-hint" id="consumptionHint" data-hint=""></span>
+            </span>
             <span class="row-field">
-              <input class="row-input" type="text" id="consumption" placeholder="0,0" autocomplete="off" value="5,9" inputmode="decimal" enterkeyhint="next" />
+              <input class="row-input" type="text" id="consumption" placeholder="0,0" autocomplete="off" value="5,9"
+                inputmode="decimal" enterkeyhint="next" aria-describedby="consumptionHint" />
               <span class="row-unit">l/100 km</span>
             </span>
           </label>
           <label class="row" for="price">
-            <span class="row-label">Cena paliva</span>
+            <span class="row-text">
+              <span class="row-label">Cena paliva</span>
+              <span class="row-hint" id="priceHint" data-hint=""></span>
+            </span>
             <span class="row-field">
-              <input class="row-input" type="text" id="price" placeholder="0,00" autocomplete="off" inputmode="decimal" enterkeyhint="done" aria-describedby="priceHint" />
+              <input class="row-input" type="text" id="price" placeholder="0,00" autocomplete="off"
+                inputmode="decimal" enterkeyhint="done" aria-describedby="priceHint" />
               <span class="row-unit">Kč/l</span>
             </span>
           </label>
         </div>
-        <p class="group-foot" id="priceHint">Cenu paliva doplníme z minulého tankování.</p>
 
         <div class="save-bar">
-          <button class="btn btn-primary btn-block" id="btnSave" type="submit">Uložit tankování a jízdu</button>
+          <button class="btn btn-primary btn-block is-inactive" id="btnSave" type="submit">Uložit tankování a jízdu</button>
         </div>
       </form>
     </section>
 
     <!-- ── PŘEHLED ── -->
     <section class="view" id="view-stats" data-title="Přehled" aria-labelledby="statsTitle" hidden>
-      <h1 class="large-title" id="statsTitle">Přehled</h1>
+      <h1 class="large-title" id="statsTitle" tabindex="-1">Přehled</h1>
 
       <div class="chips" data-month-chips role="group" aria-label="Období"></div>
 
-      <div class="hero hero-start">
-        <div class="hero-label" id="statPeriodLabel">Náklady celkem</div>
-        <div class="amount amount-xl" id="statCost">
-          <span class="amount-int">0</span><span class="amount-cur">Kč</span>
+      <div id="statsContent">
+        <div class="hero hero-start">
+          <div class="hero-label" id="statPeriodLabel">Náklady celkem</div>
+          <div class="amount amount-xl" id="statCost"></div>
+          <div class="hero-sub" id="statSummary"></div>
         </div>
-        <div class="hero-sub" id="statSummary">Zatím žádné jízdy</div>
+
+        <div class="card chart-card">
+          <div class="card-head">
+            <h2 class="card-title">Náklady po měsících</h2>
+            <span class="card-aside" id="chartAvg"></span>
+          </div>
+          <div class="chart" id="costChart" role="group" aria-label="Náklady za posledních 6 měsíců"></div>
+        </div>
+
+        <h2 class="section-title">Souhrn</h2>
+        <div class="group">
+          <div class="detail-row"><span class="detail-label">Ujeto</span><span class="detail-value" id="statKm">0 km</span></div>
+          <div class="detail-row"><span class="detail-label">Spotřebováno</span><span class="detail-value" id="statLiters">0 l</span></div>
+          <div class="detail-row"><span class="detail-label">Průměrná spotřeba</span><span class="detail-value" id="statAvgCons">—</span></div>
+          <div class="detail-row"><span class="detail-label">Průměrná cena za km</span><span class="detail-value" id="statPerKm">—</span></div>
+          <div class="detail-row"><span class="detail-label">Průměrná jízda</span><span class="detail-value" id="statAvgTrip">—</span></div>
+        </div>
       </div>
 
-      <div class="card chart-card">
-        <div class="card-head">
-          <span class="card-title">Náklady po měsících</span>
-          <span class="card-aside" id="chartAvg"></span>
-        </div>
-        <div class="chart" id="costChart" role="group" aria-label="Náklady za posledních 6 měsíců"></div>
-      </div>
-
-      <div class="tiles">
-        <div class="tile">
-          <span class="tile-label">Ujeto</span>
-          <span class="tile-value"><span id="statKm">0</span><span class="tile-unit">km</span></span>
-        </div>
-        <div class="tile">
-          <span class="tile-label">Spotřebováno</span>
-          <span class="tile-value"><span id="statLiters">0</span><span class="tile-unit">l</span></span>
-        </div>
-        <div class="tile">
-          <span class="tile-label">Počet jízd</span>
-          <span class="tile-value"><span id="statTrips">0</span></span>
-        </div>
-        <div class="tile">
-          <span class="tile-label">Průměrná spotřeba</span>
-          <span class="tile-value"><span id="statAvgCons">0</span><span class="tile-unit">l/100 km</span></span>
-        </div>
-        <div class="tile">
-          <span class="tile-label">Průměr na jízdu</span>
-          <span class="tile-value"><span id="statAvgKm">0</span><span class="tile-unit">km</span></span>
-        </div>
-        <div class="tile">
-          <span class="tile-label">Průměr na jízdu</span>
-          <span class="tile-value"><span id="statAvgCost">0</span><span class="tile-unit">Kč</span></span>
-        </div>
+      <div class="empty" id="statsEmpty" hidden>
+        <span class="empty-icon"><svg width="28" height="28" aria-hidden="true"><use href="#i-chart" /></svg></span>
+        <p class="empty-title">Zatím tu nic není</p>
+        <p class="empty-text">Po první uložené jízdě tady uvidíš náklady, spotřebu a vývoj po měsících.</p>
+        <button type="button" class="btn btn-primary btn-pill" data-goto="entry">
+          <svg width="18" height="18" aria-hidden="true"><use href="#i-plus" /></svg><span>Přidat jízdu</span>
+        </button>
       </div>
     </section>
 
     <!-- ── HISTORIE ── -->
     <section class="view" id="view-history" data-title="Historie" aria-labelledby="historyTitle" hidden>
-      <h1 class="large-title" id="historyTitle">Historie</h1>
+      <h1 class="large-title" id="historyTitle" tabindex="-1">Historie</h1>
       <div class="chips" data-month-chips role="group" aria-label="Období"></div>
       <div class="history" id="historyList"></div>
     </section>
@@ -241,8 +222,8 @@
   <dialog class="sheet" id="settingsSheet" aria-labelledby="settingsTitle">
     <div class="sheet-backdrop" data-sheet-close></div>
     <div class="sheet-panel">
-      <div class="sheet-grabber" aria-hidden="true"></div>
       <div class="sheet-head">
+        <div class="sheet-grabber" aria-hidden="true"></div>
         <h2 class="sheet-title" id="settingsTitle">Nastavení</h2>
         <button class="icon-btn icon-btn-sm" type="button" data-sheet-close aria-label="Zavřít">
           <svg width="16" height="16" aria-hidden="true"><use href="#i-close" /></svg>
@@ -250,7 +231,7 @@
       </div>
 
       <div class="sheet-body">
-        <div class="section-label" id="themeLabel">Vzhled</div>
+        <h3 class="section-label" id="themeLabel">Vzhled</h3>
         <div class="segmented" id="themeControl" role="group" aria-labelledby="themeLabel">
           <span class="segmented-thumb" aria-hidden="true"></span>
           <button type="button" data-theme-value="auto">Automaticky</button>
@@ -258,7 +239,7 @@
           <button type="button" data-theme-value="dark">Tmavý</button>
         </div>
 
-        <div class="section-label">Moje zařízení</div>
+        <h3 class="section-label">Moje zařízení</h3>
         <div class="group">
           <div class="id-row">
             <div class="id-text">
@@ -281,11 +262,11 @@
             <label class="visually-hidden" for="importIdInput">ID z jiného zařízení</label>
             <input class="text-input" type="text" id="importIdInput" placeholder="Vlož ID z jiného zařízení"
               autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" />
-            <button class="pill-btn pill-btn-accent" id="btnImportId" type="button">Importovat</button>
+            <button class="pill-btn" id="btnImportId" type="button">Importovat</button>
           </div>
         </div>
 
-        <div class="section-label">Data</div>
+        <h3 class="section-label">Data</h3>
         <div class="group">
           <button class="list-btn list-btn-danger" id="btnClearAll" type="button">
             <svg width="20" height="20" aria-hidden="true"><use href="#i-trash" /></svg>
@@ -295,6 +276,7 @@
 
         <p class="sheet-footnote">Fuel Calculator · v2.0.0</p>
       </div>
+      <div class="visually-hidden" data-sr-status role="status" aria-live="polite"></div>
     </div>
   </dialog>
 
@@ -302,8 +284,8 @@
   <dialog class="sheet" id="tripSheet" aria-labelledby="tripSheetTitle">
     <div class="sheet-backdrop" data-sheet-close></div>
     <div class="sheet-panel">
-      <div class="sheet-grabber" aria-hidden="true"></div>
       <div class="sheet-head">
+        <div class="sheet-grabber" aria-hidden="true"></div>
         <h2 class="sheet-title sheet-title-sm" id="tripSheetTitle">Detail jízdy</h2>
         <button class="icon-btn icon-btn-sm" type="button" data-sheet-close aria-label="Zavřít">
           <svg width="16" height="16" aria-hidden="true"><use href="#i-close" /></svg>
@@ -314,12 +296,13 @@
           <div class="amount amount-lg" id="tripSheetCost"></div>
           <div class="hero-sub" id="tripSheetDate"></div>
         </div>
-        <div class="group detail-list" id="tripSheetRows"></div>
+        <div class="group" id="tripSheetRows"></div>
         <button class="btn btn-danger btn-block" id="btnDeleteTrip" type="button">
           <svg width="18" height="18" aria-hidden="true"><use href="#i-trash" /></svg>
           <span>Smazat jízdu</span>
         </button>
       </div>
+      <div class="visually-hidden" data-sr-status role="status" aria-live="polite"></div>
     </div>
   </dialog>
 
@@ -335,16 +318,18 @@
         <p class="alert-message" id="confirmMessage"></p>
         <div class="alert-actions">
           <button class="btn btn-primary btn-block" id="confirmOk" type="button"></button>
-          <button class="btn btn-ghost btn-block" id="confirmCancel" type="button" data-sheet-close>Zrušit</button>
+          <button class="btn btn-ghost btn-block" id="confirmCancel" type="button" data-sheet-close autofocus>Zrušit</button>
         </div>
       </div>
     </div>
   </dialog>
 
-  <div class="toast" id="toast" role="status" aria-live="polite">
-    <span class="toast-icon" id="toastIcon" aria-hidden="true"></span>
+  <!-- Vizuální toast (pro čtečky ho oznamují skryté stavové regiony) -->
+  <div class="toast" id="toast" aria-hidden="true">
+    <span class="toast-icon" id="toastIcon"></span>
     <span class="toast-text" id="toastText"></span>
   </div>
+  <div class="visually-hidden" data-sr-status role="status" aria-live="polite"></div>
 
   <script src="script.js?v=2.0.0"></script>
 </body>

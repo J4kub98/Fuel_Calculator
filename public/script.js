@@ -7,25 +7,31 @@
 
   // ── Formátování čísel ──
   const numberFormats = new Map();
-  function fmt(value, decimals = 2) {
-    let nf = numberFormats.get(decimals);
+  function fmt(value, minDecimals = 2, maxDecimals = minDecimals) {
+    const key = `${minDecimals}:${maxDecimals}`;
+    let nf = numberFormats.get(key);
     if (!nf) {
       nf = new Intl.NumberFormat(LOCALE, {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals,
+        minimumFractionDigits: minDecimals,
+        maximumFractionDigits: maxDecimals,
       });
-      numberFormats.set(decimals, nf);
+      numberFormats.set(key, nf);
     }
     return nf.format(Number(value) || 0);
   }
 
-  // Částka s menšími desetinami: <int><,dec><měna>
+  const fmtKm = (v) => fmt(v, 0, 1);          // 180 km, 412,5 km
+  const fmtCons = (v) => fmt(v, 1, 2);        // 5,9 / 5,85 l/100 km
+
+  // Částka s menšími desetinami. Čtečkám se přečte celá v jednom kuse.
   function amountHTML(value, decimals = 2, currency = 'Kč') {
-    const [int, dec] = fmt(value, decimals).split(',');
+    const text = fmt(value, decimals);
+    const [int, dec] = text.split(',');
     return (
-      `<span class="amount-int">${int}</span>` +
-      (dec !== undefined ? `<span class="amount-dec">,${dec}</span>` : '') +
-      (currency ? `<span class="amount-cur">${currency}</span>` : '')
+      `<span class="visually-hidden">${text}${currency ? ` ${currency}` : ''}</span>` +
+      `<span class="amount-int" aria-hidden="true">${int}</span>` +
+      (dec !== undefined ? `<span class="amount-dec" aria-hidden="true">,${dec}</span>` : '') +
+      (currency ? `<span class="amount-cur" aria-hidden="true">${currency}</span>` : '')
     );
   }
 
@@ -125,6 +131,9 @@
     }
 
     const data = await res.json();
+    if (!data || typeof data.userId !== 'string' || !data.userId) {
+      throw new Error('Nepodařilo se vytvořit bezpečnou relaci');
+    }
     sessionUserId = data.userId;
 
     // Záloha ID v localStorage - prevence ztráty dat po vypršení relace (cookie)
@@ -136,9 +145,12 @@
   // ── Stav aplikace ──
   let trips = [];
   let isLoading = true;
-  let selectedMonth = null; // 'all' | 'YYYY-MM'
+  let isSaving = false;
+  let selectedMonth = null; // null (bez dat) | 'all' | 'YYYY-MM'
   let activeView = 'entry';
   let openTripId = null;
+  let priceMirrorsRefuelPrice = false;
+  let priceAutoFilled = false;
 
   function sortTrips() {
     trips.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -163,7 +175,11 @@
       body: JSON.stringify(trip),
     });
     if (!res.ok) throw new Error('Nepodařilo se uložit jízdu');
-    return res.json();
+    const saved = await res.json();
+    if (!saved || saved.id === undefined || !saved.date || Number.isNaN(new Date(saved.date).getTime())) {
+      throw new Error('Nepodařilo se uložit jízdu');
+    }
+    return saved;
   }
 
   async function apiDeleteTrip(id) {
@@ -174,42 +190,61 @@
     if (!res.ok) throw new Error('Nepodařilo se smazat jízdu');
   }
 
-  // ── Last refuelling price ──
-  function getRefuelPrice(trip) {
-    // Starší záznamy vznikly před přidáním samostatné ceny tankování.
-    // Jejich cenu jízdy proto použijeme jako rozumný výchozí údaj.
-    const value = trip.refuel_price ?? trip.refuelPrice ?? trip.price;
-    return value === null || value === undefined ? null : Number(value);
+  // Offline cache API odpovědí patří k jednomu ID — po přepnutí ji zahodíme
+  function clearCachedTrips() {
+    if (!('caches' in window)) return;
+    caches.keys()
+      .then((keys) => Promise.all(keys.map((k) => caches.open(k).then((c) => c.delete('/api/trips')))))
+      .catch(() => {});
   }
 
+  // ── Last refuelling price ──
   function getLastRefuelPrice() {
     if (!trips.length) return null;
     const lastTrip = [...trips].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-    return getRefuelPrice(lastTrip);
+    // Starší záznamy vznikly před přidáním samostatné ceny tankování.
+    // Jejich cenu jízdy proto použijeme jako rozumný výchozí údaj.
+    const value = lastTrip.refuel_price ?? lastTrip.refuelPrice ?? lastTrip.price;
+    return value === null || value === undefined ? null : Number(value);
   }
 
   // Do ceny jízdy se dosadí cena z předchozího tankování. Aktuálně tankovaná
   // cena se ukládá zvlášť a použije se až pro další jízdu.
-  function fillLastPrice() {
+  function fillLastPrice({ replaceAuto = false } = {}) {
     const lastPrice = getLastRefuelPrice();
     const priceInput = $('price');
 
+    // Automaticky doplněnou cenu po smazání/importu nahradíme aktuální
+    if (replaceAuto && priceAutoFilled) {
+      priceInput.value = '';
+      priceAutoFilled = false;
+    }
+
     if (lastPrice !== null && priceInput.value === '') {
       priceInput.value = toInputValue(lastPrice, 2);
-      calculate();
+      priceAutoFilled = true;
+      priceMirrorsRefuelPrice = false;
+      clearInvalid('price');
     }
     updatePriceHint();
+    calculate();
   }
 
   function updatePriceHint() {
-    const lastPrice = getLastRefuelPrice();
-    $('priceHint').textContent = lastPrice !== null
-      ? `Doplněno z minulého tankování (${fmt(lastPrice, 2)} Kč/l). Můžeš ji přepsat.`
-      : 'U první jízdy použijeme dnešní cenu za litr.';
+    let hint = '';
+    if (priceAutoFilled) hint = 'Z minulého tankování';
+    else if (getLastRefuelPrice() === null) hint = 'U první jízdy stejná jako dnešní cena';
+    setHint('price', hint);
   }
 
-  // ── Calculate ──
+  // ── Vstupy ──
   const inputIds = ['refuelPrice', 'distance', 'consumption', 'price'];
+  const LIMITS = {
+    refuelPrice: { max: 500, empty: 'Zadej dnešní cenu za litr', over: 'Nejvýš 500 Kč/l' },
+    distance: { max: 5000, empty: 'Zadej ujetou vzdálenost', over: 'Nejvýš 5 000 km' },
+    consumption: { max: 50, empty: 'Zadej spotřebu', over: 'Nejvýš 50 l/100 km' },
+    price: { max: 500, empty: 'Zadej cenu paliva', over: 'Nejvýš 500 Kč/l' },
+  };
 
   // Pole jsou textová (inputmode=decimal), aby šla psát česká desetinná čárka
   function parseDecimal(value) {
@@ -224,36 +259,93 @@
     return Number(value).toFixed(decimals).replace('.', ',');
   }
 
-  // Povolí jen číslice a jeden desetinný oddělovač (zobrazený jako čárka)
+  // Povolí jen číslice a jeden desetinný oddělovač (zobrazený jako čárka).
+  // Při vložení „1.234,5“ nebo „1,234.5“ je desetinný oddělovač ten poslední.
+  function normalizeDecimal(raw) {
+    let clean = raw.replace(/[^\d.,]/g, '');
+    const lastSep = Math.max(clean.lastIndexOf(','), clean.lastIndexOf('.'));
+    const hasBoth = clean.includes(',') && clean.includes('.');
+    if (hasBoth && lastSep !== -1) {
+      clean = clean.slice(0, lastSep).replace(/[.,]/g, '') + ',' + clean.slice(lastSep + 1).replace(/[.,]/g, '');
+    } else {
+      clean = clean.replace(/\./g, ',');
+      const first = clean.indexOf(',');
+      if (first !== -1) clean = clean.slice(0, first + 1) + clean.slice(first + 1).replace(/,/g, '');
+    }
+    return clean;
+  }
+
   function sanitizeDecimalInput(input) {
     const raw = input.value;
-    let clean = raw.replace(/[^\d.,]/g, '').replace(/\./g, ',');
-    const firstComma = clean.indexOf(',');
-    if (firstComma !== -1) {
-      clean = clean.slice(0, firstComma + 1) + clean.slice(firstComma + 1).replace(/,/g, '');
-    }
+    const clean = normalizeDecimal(raw);
     if (clean !== raw) {
       const pos = input.selectionStart;
       input.value = clean;
       if (pos !== null) {
-        const p = Math.max(0, pos - (raw.length - clean.length));
+        const p = Math.max(0, Math.min(clean.length, pos - (raw.length - clean.length)));
         try { input.setSelectionRange(p, p); } catch { /* některé typy výběr nepodporují */ }
       }
     }
   }
 
+  function setHint(id, text) {
+    const hint = $(`${id}Hint`);
+    hint.dataset.hint = text;
+    if (!$(id).closest('.row').classList.contains('is-invalid')) hint.textContent = text;
+  }
+
+  function validateField(id) {
+    const value = readNumber(id);
+    if (!(value > 0)) return LIMITS[id].empty;
+    if (value > LIMITS[id].max) return LIMITS[id].over;
+    return null;
+  }
+
+  function markInvalid(id, message) {
+    const row = $(id).closest('.row');
+    row.classList.add('is-invalid');
+    $(id).setAttribute('aria-invalid', 'true');
+    $(`${id}Hint`).textContent = message;
+  }
+
+  function clearInvalid(id) {
+    const row = $(id).closest('.row');
+    if (!row.classList.contains('is-invalid')) return;
+    row.classList.remove('is-invalid');
+    $(id).removeAttribute('aria-invalid');
+    const hint = $(`${id}Hint`);
+    hint.textContent = hint.dataset.hint || '';
+  }
+
+  function shake(el) {
+    el.classList.remove('is-shaking');
+    void el.offsetWidth;
+    el.classList.add('is-shaking');
+  }
+
+  function updateSaveState() {
+    const ready = inputIds.every((id) => !validateField(id));
+    $('btnSave').classList.toggle('is-inactive', !ready);
+  }
+
+  // ── Calculate ──
+  let liveTimer = null;
   function calculate() {
     const dist  = readNumber('distance') || 0;
     const cons  = readNumber('consumption') || 0;
     const price = readNumber('price') || 0;
     const costEl = $('resultCost');
+    const summary = $('resultSummary');
+
+    updateSaveState();
+    clearTimeout(liveTimer);
 
     if (dist <= 0 || cons <= 0 || price <= 0) {
       costEl.classList.add('is-empty');
       costEl.innerHTML = amountHTML(0);
       costEl._value = 0;
-      $('resultLiters').textContent = '—';
-      $('resultPerKm').textContent  = '—';
+      summary.classList.add('is-empty');
+      summary.textContent = '0,00 l · 0,00 Kč/km';
       return null;
     }
 
@@ -264,41 +356,43 @@
     costEl.classList.remove('is-empty');
     costEl.innerHTML = amountHTML(cost);
     costEl._value = cost;
-    $('resultLiters').textContent = `${fmt(liters, 2)} l`;
-    $('resultPerKm').textContent  = `${fmt(perKm, 2)} Kč`;
+    summary.classList.remove('is-empty');
+    summary.textContent = `${fmt(liters, 2)} l · ${fmt(perKm, 2)} Kč/km`;
+
+    // Čtečkám oznámíme výsledek až po dopsání čísla
+    liveTimer = setTimeout(() => {
+      $('calcLive').textContent = `Náklady jízdy ${fmt(cost, 2)} Kč, spotřebováno ${fmt(liters, 2)} litrů.`;
+    }, 800);
 
     return { liters, cost, perKm };
   }
 
   // ── Loading state ──
-  function setSaveLoading(isSaving) {
+  function setSaveLoading(loading) {
     const btn = $('btnSave');
-    btn.disabled = isSaving;
-    btn.setAttribute('aria-busy', String(isSaving));
-    btn.innerHTML = isSaving
+    btn.disabled = loading;
+    btn.setAttribute('aria-busy', String(loading));
+    btn.innerHTML = loading
       ? '<span class="spinner" aria-hidden="true"></span><span>Ukládám…</span>'
       : 'Uložit tankování a jízdu';
-  }
-
-  function markInvalid(ids) {
-    ids.forEach((id) => {
-      const row = $(id).closest('.row');
-      row.classList.remove('is-invalid');
-      // Restart animace
-      void row.offsetWidth;
-      row.classList.add('is-invalid');
-      $(id).setAttribute('aria-invalid', 'true');
-    });
-  }
-
-  function clearInvalid(id) {
-    $(id).closest('.row').classList.remove('is-invalid');
-    $(id).removeAttribute('aria-invalid');
   }
 
   // ── Save trip ──
   async function saveTrip(event) {
     if (event) event.preventDefault();
+    if (isSaving) return;
+
+    const errors = inputIds
+      .map((id) => [id, validateField(id)])
+      .filter(([, message]) => message);
+
+    if (errors.length) {
+      errors.forEach(([id, message]) => markInvalid(id, message));
+      new Set(errors.map(([id]) => $(id).closest('.group'))).forEach(shake);
+      $(errors[0][0]).focus();
+      showToast(errors.length > 1 ? 'Doplň zvýrazněná pole' : errors[0][1], 'error');
+      return;
+    }
 
     const values = {
       refuelPrice: readNumber('refuelPrice'),
@@ -306,18 +400,11 @@
       consumption: readNumber('consumption'),
       price: readNumber('price'),
     };
-    const missing = inputIds.filter((id) => !(values[id] > 0));
-
-    if (missing.length) {
-      markInvalid(missing);
-      $(missing[0]).focus();
-      showToast('Vyplň všechna pole', 'error');
-      return;
-    }
 
     const result = calculate();
     if (!result) return;
 
+    isSaving = true;
     setSaveLoading(true);
     try {
       const saved = await postTrip({
@@ -337,21 +424,34 @@
       $('price').value       = '';
       $('refuelPrice').value = '';
       priceMirrorsRefuelPrice = false;
-      calculate();
+      priceAutoFilled = false;
 
       fillLastPrice();
       renderAll();
+      if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
       if (navigator.vibrate) navigator.vibrate(12);
       showToast('Tankování a jízda uloženy');
     } catch {
-      showToast('Uložení se nepovedlo', 'error');
+      showToast(navigator.onLine === false ? 'Jsi offline — jízda se neuložila' : 'Uložení se nepovedlo', 'error');
     } finally {
+      isSaving = false;
       setSaveLoading(false);
+      updateSaveState();
     }
   }
 
-  // ── Toast ──
+  // ── Toast + oznámení pro čtečky ──
   let toastTimer = null;
+  function announce(message) {
+    // Stavový region v nejvrchnějším otevřeném dialogu (jinak v body)
+    const host = openSheets[openSheets.length - 1];
+    const region = (host && host.querySelector('[data-sr-status]')) ||
+      document.querySelector('body > [data-sr-status]');
+    if (!region) return;
+    region.textContent = '';
+    setTimeout(() => { region.textContent = message; }, 60);
+  }
+
   function showToast(message, tone = 'success') {
     const toast = $('toast');
     const icons = { success: 'i-check', error: 'i-alert', info: 'i-check' };
@@ -367,6 +467,7 @@
       void toast.offsetWidth;
     }
     toast.classList.add('is-visible');
+    announce(message);
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => toast.classList.remove('is-visible'), 2600);
   }
@@ -400,8 +501,10 @@
 
     const chip = (value, label, count) => {
       const pressed = value === selectedMonth;
-      return `<button type="button" class="chip" data-month="${value}" aria-pressed="${pressed}">` +
-        `${escapeHTML(capitalize(label))}<span class="chip-count">${count}</span></button>`;
+      const name = capitalize(label);
+      return `<button type="button" class="chip" data-month="${value}" aria-pressed="${pressed}" ` +
+        `aria-label="${escapeHTML(name)}, ${count} ${plural(count, 'jízda', 'jízdy', 'jízd')}">` +
+        `${escapeHTML(name)}<span class="chip-count" aria-hidden="true">${count}</span></button>`;
     };
 
     const html = chip('all', 'Vše', trips.length) +
@@ -410,19 +513,33 @@
     document.querySelectorAll('[data-month-chips]').forEach((container) => {
       container.innerHTML = html;
       container.hidden = trips.length === 0;
-      const active = container.querySelector('[aria-pressed="true"]');
-      if (active && container.offsetParent !== null) {
-        container.scrollLeft = Math.max(0, active.offsetLeft - container.clientWidth / 2 + active.clientWidth / 2);
-      }
+      scrollChipIntoView(container);
     });
   }
 
-  function selectMonth(value) {
+  function scrollChipIntoView(container) {
+    const chips = [...container.querySelectorAll('.chip')];
+    const index = chips.findIndex((c) => c.getAttribute('aria-pressed') === 'true');
+    if (index <= 1 || container.offsetParent === null) {
+      container.scrollLeft = 0;
+      return;
+    }
+    const active = chips[index];
+    container.scrollLeft = Math.max(0, active.offsetLeft - container.clientWidth / 2 + active.clientWidth / 2);
+  }
+
+  function selectMonth(value, { focusFrom } = {}) {
     if (value === selectedMonth) return;
     selectedMonth = value;
     renderMonthChips();
     renderStats();
     renderHistory();
+    // Překreslení chipů by jinak ztratilo fokus klávesnice
+    if (focusFrom) {
+      const container = focusFrom.closest('[data-month-chips], .chart');
+      const target = container && container.querySelector(`[data-month="${value}"]`);
+      if (target) target.focus({ preventScroll: true });
+    }
   }
 
   function getFilteredTrips() {
@@ -432,6 +549,11 @@
 
   // ── Render stats ──
   function renderStats({ animate = false } = {}) {
+    const hasTrips = trips.length > 0 && !isLoading;
+    $('statsContent').hidden = !hasTrips && !isLoading;
+    $('statsEmpty').hidden = hasTrips || isLoading;
+    if (!hasTrips) return;
+
     const filtered  = getFilteredTrips();
     const totalKm   = filtered.reduce((s, t) => s + Number(t.distance), 0);
     const totalL    = filtered.reduce((s, t) => s + Number(t.liters), 0);
@@ -442,18 +564,21 @@
       ? 'Náklady celkem'
       : `Náklady · ${monthLabel(selectedMonth, { withYear: true })}`;
 
-    animateAmount($('statCost'), totalCost, { decimals: 0, from: animate ? 0 : undefined });
+    const costEl = $('statCost');
+    costEl.classList.toggle('is-empty', count === 0);
+    animateAmount(costEl, totalCost, { decimals: 0, from: animate ? 0 : undefined });
 
     $('statSummary').textContent = count
       ? `${count} ${plural(count, 'jízda', 'jízdy', 'jízd')} · ${fmt(totalKm, 0)} km`
-      : (trips.length ? 'V tomto období nejsou žádné jízdy' : 'Zatím žádné jízdy');
+      : 'V tomto období nejsou žádné jízdy';
 
-    $('statKm').textContent      = fmt(totalKm, 1);
-    $('statLiters').textContent  = fmt(totalL, 1);
-    $('statTrips').textContent   = String(count);
-    $('statAvgCons').textContent = totalKm ? fmt((totalL / totalKm) * 100, 1) : fmt(0, 1);
-    $('statAvgKm').textContent   = count ? fmt(totalKm / count, 1) : fmt(0, 1);
-    $('statAvgCost').textContent = count ? fmt(totalCost / count, 0) : '0';
+    $('statKm').textContent      = `${fmt(totalKm, 0)} km`;
+    $('statLiters').textContent  = `${fmt(totalL, 1)} l`;
+    $('statAvgCons').textContent = totalKm ? `${fmt((totalL / totalKm) * 100, 1)} l/100 km` : '—';
+    $('statPerKm').textContent   = totalKm ? `${fmt(totalCost / totalKm, 2)} Kč` : '—';
+    $('statAvgTrip').textContent = count
+      ? `${fmt(totalKm / count, 0)} km · ${fmt(totalCost / count, 0)} Kč`
+      : '—';
 
     renderChart({ animate });
   }
@@ -472,8 +597,7 @@
 
     const months = [];
     for (let i = 5; i >= 0; i--) {
-      const d = new Date(end.getFullYear(), end.getMonth() - i, 1);
-      months.push(monthKey(d));
+      months.push(monthKey(new Date(end.getFullYear(), end.getMonth() - i, 1)));
     }
 
     const totals = new Map(months.map((k) => [k, 0]));
@@ -488,7 +612,6 @@
     const avg = nonZero.length ? nonZero.reduce((s, v) => s + v, 0) / nonZero.length : 0;
 
     $('chartAvg').textContent = avg ? `Ø ${fmt(avg, 0)} Kč / měsíc` : '';
-    chart.classList.toggle('is-all', selectedMonth === 'all');
 
     const key = months.join(',');
     const rebuild = chart.dataset.key !== key;
@@ -496,11 +619,11 @@
       chart.dataset.key = key;
       chart.innerHTML = '<div class="chart-avg" aria-hidden="true"></div>' + months.map((k) => `
         <button type="button" class="chart-col" data-month="${k}">
-          <span class="chart-track">
+          <span class="chart-track" aria-hidden="true">
             <span class="chart-bar"></span>
             <span class="chart-value"></span>
           </span>
-          <span class="chart-label">${escapeHTML(monthDate(k).toLocaleDateString(LOCALE, { month: 'short' }).replace('.', ''))}</span>
+          <span class="chart-label" aria-hidden="true">${escapeHTML(monthDate(k).toLocaleDateString(LOCALE, { month: 'short' }).replace('.', ''))}</span>
         </button>`).join('');
     }
 
@@ -527,7 +650,7 @@
       });
       const avgRatio = zero || !max ? 0 : avg / max;
       avgLine.style.bottom = `calc(24px + (100% - 44px) * ${avgRatio})`;
-      avgLine.style.opacity = avg && !zero ? '1' : '0';
+      avgLine.style.opacity = avg && !zero ? '' : '0';
     };
 
     if ((animate || rebuild) && !reducedMotion.matches) {
@@ -557,7 +680,7 @@
     const el = $('historyList');
 
     if (isLoading) {
-      el.innerHTML = `<div class="group skeleton" aria-hidden="true">${'<div class="skeleton-row"><span></span><span></span></div>'.repeat(3)}</div>`;
+      el.innerHTML = `<div class="group" aria-hidden="true">${'<div class="skeleton-row"><span></span><span></span></div>'.repeat(3)}</div>`;
       return;
     }
 
@@ -567,7 +690,7 @@
           <span class="empty-icon">${icon('i-pump', 28)}</span>
           <p class="empty-title">Zatím žádné jízdy</p>
           <p class="empty-text">Ulož první tankování a tady uvidíš přehled všech jízd.</p>
-          <button type="button" class="btn btn-primary" data-goto="entry">${icon('i-plus', 18)}<span>Přidat jízdu</span></button>
+          <button type="button" class="btn btn-primary btn-pill" data-goto="entry">${icon('i-plus', 18)}<span>Přidat jízdu</span></button>
         </div>`;
       return;
     }
@@ -599,22 +722,21 @@
 
     el.innerHTML = groups.map((g) => `
       <section class="day">
-        <h3 class="day-head">
-          <span class="day-name">${escapeHTML(dayLabel(g.date))}</span>
-          <span class="day-total">${fmt(g.total, 2)} Kč</span>
-        </h3>
+        <h2 class="day-head">
+          <span>${escapeHTML(dayLabel(g.date))}</span>
+          ${g.trips.length > 1 ? `<span class="day-total"><span class="visually-hidden">celkem </span>${fmt(g.total, 2)} Kč</span>` : ''}
+        </h2>
         <div class="group">
           ${g.trips.map((trip) => {
             const time = new Date(trip.date).toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit' });
             return `
             <button type="button" class="trip" data-trip-id="${escapeHTML(trip.id)}"
-              aria-label="Jízda ${fmt(trip.distance, 1)} km za ${fmt(trip.cost, 2)} Kč, ${escapeHTML(time)}">
-              <span class="trip-icon">${icon('i-drop', 20)}</span>
-              <span class="trip-main">
-                <span class="trip-title">${fmt(trip.distance, 1)} km</span>
-                <span class="trip-sub">${escapeHTML(time)} · ${fmt(trip.consumption, 1)} l/100 km</span>
+              aria-label="${fmtKm(trip.distance)} km za ${fmt(trip.cost, 2)} Kč, ${escapeHTML(time)}. Zobrazit detail">
+              <span class="trip-main" aria-hidden="true">
+                <span class="trip-title">${fmtKm(trip.distance)} km</span>
+                <span class="trip-sub">${escapeHTML(time)} · ${fmtCons(trip.consumption)} l/100 km</span>
               </span>
-              <span class="trip-end">
+              <span class="trip-end" aria-hidden="true">
                 <span class="trip-amount amount">${amountHTML(trip.cost)}</span>
                 <span class="trip-sub">${fmt(trip.liters, 2)} l</span>
               </span>
@@ -658,6 +780,9 @@
         const idx = openSheets.indexOf(dialog);
         if (idx !== -1) openSheets.splice(idx, 1);
         if (!openSheets.length) document.documentElement.classList.remove('has-sheet');
+        // Toast nesmí zůstat v zavřeném dialogu
+        const toast = $('toast');
+        if (dialog.contains(toast)) (openSheets[openSheets.length - 1] || document.body).appendChild(toast);
         const target = dialog._returnFocus;
         if (target && document.contains(target) && typeof target.focus === 'function') {
           target.focus({ preventScroll: true });
@@ -681,7 +806,7 @@
       if (e.target.closest('[data-sheet-close]')) closeSheet(dialog);
     });
 
-    // Zavření tažením dolů za hlavičku sheetu
+    // Zavření tažením dolů za hlavičku sheetu (včetně úchytu)
     const handle = dialog.querySelector('.sheet-head');
     if (!handle) return;
     let startY = 0;
@@ -708,8 +833,7 @@
       lastT = now;
       const dy = e.clientY - startY;
       // Nahoru jen s odporem
-      const offset = dy > 0 ? dy : dy / 6;
-      dialog.style.setProperty('--drag', `${offset}px`);
+      dialog.style.setProperty('--drag', `${dy > 0 ? dy : dy / 6}px`);
     });
 
     const endDrag = (e) => {
@@ -727,7 +851,7 @@
     handle.addEventListener('pointercancel', endDrag);
   }
 
-  // Potvrzovací dialog místo nativního confirm()
+  // Potvrzovací dialog místo nativního confirm(). Výchozí fokus je na „Zrušit“.
   function confirmSheet({ title, message, confirmLabel, destructive = false }) {
     const dialog = $('confirmSheet');
     $('confirmTitle').textContent = title;
@@ -750,8 +874,6 @@
         resolve(result);
       }, { once: true });
       openSheet(dialog);
-      // Bezpečnější výchozí volba je „Zrušit“
-      requestAnimationFrame(() => $('confirmCancel').focus());
     });
   }
 
@@ -769,12 +891,12 @@
 
     const refuel = trip.refuel_price ?? trip.refuelPrice;
     const rows = [
-      ['Vzdálenost', `${fmt(trip.distance, 1)} km`],
-      ['Spotřeba', `${fmt(trip.consumption, 1)} l/100 km`],
-      ['Spotřebováno', `${fmt(trip.liters, 3)} l`],
-      ['Cena paliva pro jízdu', `${fmt(trip.price, 2)} Kč/l`],
+      ['Vzdálenost', `${fmtKm(trip.distance)} km`],
+      ['Spotřeba', `${fmtCons(trip.consumption)} l/100 km`],
+      ['Spotřebováno', `${fmt(trip.liters, 2)} l`],
+      ['Cena použitá pro jízdu', `${fmt(trip.price, 2)} Kč/l`],
     ];
-    if (refuel !== undefined && refuel !== null) rows.push(['Cena při tankování', `${fmt(refuel, 2)} Kč/l`]);
+    if (refuel !== undefined && refuel !== null) rows.push(['Cena při tomto tankování', `${fmt(refuel, 2)} Kč/l`]);
     if (Number(trip.distance) > 0) rows.push(['Cena za km', `${fmt(Number(trip.cost) / Number(trip.distance), 2)} Kč`]);
 
     $('tripSheetRows').innerHTML = rows.map(([label, value]) =>
@@ -796,16 +918,24 @@
     });
     if (!confirmed) return;
 
+    // Zapamatujeme si pozici řádku, aby fokus po smazání nezmizel
+    const rows = [...document.querySelectorAll('.trip')];
+    const index = rows.findIndex((r) => r.dataset.tripId === String(id));
+
     try {
       await apiDeleteTrip(id);
       trips = trips.filter((t) => t.id !== id);
       openTripId = null;
       await closeSheet($('tripSheet'));
       renderAll();
-      fillLastPrice();
+      fillLastPrice({ replaceAuto: true });
+
+      const next = [...document.querySelectorAll('.trip')];
+      const target = next[index] || next[index - 1] || $('historyTitle');
+      target.focus({ preventScroll: false });
       showToast('Jízda smazána');
     } catch {
-      showToast('Smazání se nepovedlo', 'error');
+      showToast(navigator.onLine === false ? 'Jsi offline — jízda se nesmazala' : 'Smazání se nepovedlo', 'error');
     }
   }
 
@@ -830,16 +960,17 @@
       $('price').value = '';
       $('refuelPrice').value = '';
       priceMirrorsRefuelPrice = false;
+      priceAutoFilled = false;
       selectedMonth = null;
-      calculate();
-      renderAll();
       fillLastPrice();
+      renderAll();
       showToast('Historie smazána');
     } catch {
       // Část jízd mohla být smazána — načteme aktuální stav ze serveru
       try {
         await fetchTrips();
         renderAll();
+        fillLastPrice({ replaceAuto: true });
       } catch {
         // Ignorujeme, chybu oznámíme níže.
       }
@@ -889,7 +1020,9 @@
       window.history.replaceState(null, '', HASHES[name]);
     }
 
-    if (name === 'stats' || name === 'history') renderMonthChips();
+    if (name === 'stats' || name === 'history') {
+      document.querySelectorAll(`#view-${name} [data-month-chips]`).forEach(scrollChipIntoView);
+    }
     if (name === 'stats' && !initial) renderStats({ animate: true });
 
     window.scrollTo(0, initial ? 0 : (scrollPositions[name] || 0));
@@ -965,6 +1098,11 @@
       }
     });
 
+    // Akcent tlačítka „Importovat“ jen když je co importovat
+    importInput.addEventListener('input', () => {
+      importButton.classList.toggle('pill-btn-accent', importInput.value.trim() !== '');
+    });
+
     const handleImport = async () => {
       const targetId = importInput.value.trim();
 
@@ -991,16 +1129,18 @@
 
       try {
         await ensureSession({ legacyUserId: targetId, force: true });
+        clearCachedTrips();
         await fetchTrips();
         $('deviceIdDisplay').textContent = sessionUserId || '—';
         importInput.value = '';
+        importButton.classList.remove('pill-btn-accent');
         $('price').value = '';
         $('refuelPrice').value = '';
         priceMirrorsRefuelPrice = false;
+        priceAutoFilled = false;
         selectedMonth = null;
-        calculate();
-        fillLastPrice();
         renderAll();
+        fillLastPrice();
         showToast('ID importováno, data načtena');
       } catch (err) {
         showToast((err && err.message) || 'Import se nepovedl', 'error');
@@ -1022,40 +1162,42 @@
     $('btnDeleteTrip').addEventListener('click', handleDeleteTrip);
   }
 
-  // ── Event listeners ──
-  let priceMirrorsRefuelPrice = false;
-
+  // ── Formulář ──
   function initForm() {
     $('entryForm').addEventListener('submit', saveTrip);
 
     inputIds.forEach((id) => {
-      $(id).addEventListener('input', () => sanitizeDecimalInput($(id)));
-    });
-
-    ['distance', 'consumption'].forEach((id) => {
       $(id).addEventListener('input', () => {
+        sanitizeDecimalInput($(id));
         clearInvalid(id);
-        calculate();
       });
     });
 
+    ['distance', 'consumption'].forEach((id) => {
+      $(id).addEventListener('input', calculate);
+    });
+
     $('price').addEventListener('input', () => {
-      clearInvalid('price');
       priceMirrorsRefuelPrice = false;
+      priceAutoFilled = false;
+      updatePriceHint();
       calculate();
     });
 
     $('refuelPrice').addEventListener('input', () => {
-      clearInvalid('refuelPrice');
       // U prvního záznamu není k dispozici dřívější cena. Použijeme proto
       // aktuálně zadanou cenu také pro výpočet této jízdy.
+      if (isLoading) {
+        updateSaveState();
+        return;
+      }
       if (getLastRefuelPrice() === null &&
           ($('price').value === '' || priceMirrorsRefuelPrice)) {
         $('price').value = $('refuelPrice').value;
         priceMirrorsRefuelPrice = true;
         clearInvalid('price');
-        calculate();
       }
+      calculate();
     });
 
     // Enter přeskočí na další pole, u posledního odešle formulář
@@ -1065,7 +1207,7 @@
         e.preventDefault();
         const next = inputIds[i + 1];
         if (next) $(next).focus();
-        else $('entryForm').requestSubmit ? $('entryForm').requestSubmit() : saveTrip();
+        else saveTrip();
       });
     });
   }
@@ -1079,7 +1221,7 @@
     document.addEventListener('click', (e) => {
       const monthBtn = e.target.closest('[data-month]');
       if (monthBtn && !monthBtn.disabled) {
-        selectMonth(monthBtn.dataset.month);
+        selectMonth(monthBtn.dataset.month, { focusFrom: monthBtn });
         return;
       }
       const tripBtn = e.target.closest('[data-trip-id]');
@@ -1121,11 +1263,11 @@
       await ensureSession();
       await fetchTrips();
     } catch {
-      showToast('Nepodařilo se načíst data', 'error');
+      showToast(navigator.onLine === false ? 'Jsi offline — data se nenačetla' : 'Nepodařilo se načíst data', 'error');
     }
     isLoading = false;
-    fillLastPrice();
     renderAll();
+    fillLastPrice();
   }
 
   init();
