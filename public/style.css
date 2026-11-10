@@ -844,26 +844,37 @@ html.has-sheet body {
   bottom: 0;
   width: min(100%, 24px);
   min-height: 3px;
-  border-radius: 6px 6px 3px 3px;
-  /* Světlé tělo + kontrastní horní hrana (≥ 3:1) nese hodnotu */
+  border-radius: 3px 3px 2px 2px;
   background: var(--fill-strong);
-  box-shadow: inset 0 3px 0 var(--chart-bar);
   transform: translateX(-50%);
   transition: height 0.55s var(--ease-out), background-color 0.25s var(--ease);
 }
 
-.chart-col.is-empty .chart-bar {
-  box-shadow: none;
+/* Kontrastní horní hrana (≥ 3:1) nese hodnotu — jako značka hladiny */
+.chart-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--chart-bar);
+  transition: background-color 0.25s var(--ease);
 }
 
-.chart-col:hover:not(:disabled) .chart-bar {
-  background: var(--fill-strong);
-  box-shadow: inset 0 3px 0 var(--text-2);
+
+.chart-col.is-empty .chart-bar::before,
+.chart-col.is-selected .chart-bar::before {
+  display: none;
+}
+
+.chart-col:hover:not(:disabled) .chart-bar::before {
+  background: var(--text-2);
 }
 
 .chart-col.is-selected .chart-bar {
   background: var(--accent);
-  box-shadow: none;
 }
 
 .chart-value {
@@ -1559,6 +1570,10 @@ html.has-sheet body {
 
 /* ── Responsive ─────────────────────────────────────────────────────────── */
 @media (min-width: 640px) {
+  :root {
+    --dock-w: 520px;
+  }
+
   .large-title {
     font-size: 2.5rem;
     margin-top: 20px;
