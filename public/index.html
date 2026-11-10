@@ -88,61 +88,65 @@
       <div class="hero" id="calcHero">
         <div class="hero-label">Náklady jízdy</div>
         <div class="amount amount-xl is-empty" id="resultCost"></div>
-        <div class="hero-sub is-empty" id="resultSummary" aria-hidden="true"></div>
+        <div class="hero-sub" id="resultSummary" aria-hidden="true"></div>
         <div class="visually-hidden" id="calcLive" aria-live="polite"></div>
       </div>
 
       <form class="entry-form" id="entryForm" novalidate>
         <h2 class="section-title" id="refuelGroupTitle">Dnešní tankování</h2>
         <div class="group" role="group" aria-labelledby="refuelGroupTitle">
-          <label class="row" for="refuelPrice">
+          <div class="row" data-row="refuelPrice">
             <span class="row-text">
-              <span class="row-label">Cena za litr</span>
+              <label class="row-label" for="refuelPrice" id="refuelPriceLabel">Cena za litr</label>
               <span class="row-hint" id="refuelPriceHint" data-hint="Použijeme ji u příští jízdy">Použijeme ji u příští jízdy</span>
             </span>
             <span class="row-field">
               <input class="row-input" type="text" id="refuelPrice" placeholder="0,00" autocomplete="off"
-                inputmode="decimal" enterkeyhint="next" aria-describedby="refuelPriceHint" />
-              <span class="row-unit">Kč/l</span>
+                inputmode="decimal" enterkeyhint="next" aria-labelledby="refuelPriceLabel refuelPriceUnit"
+                aria-describedby="refuelPriceHint" />
+              <span class="row-unit" id="refuelPriceUnit">Kč/l</span>
             </span>
-          </label>
+          </div>
         </div>
 
         <h2 class="section-title" id="tripGroupTitle">Jízda od minulého tankování</h2>
         <div class="group" role="group" aria-labelledby="tripGroupTitle">
-          <label class="row" for="distance">
+          <div class="row" data-row="distance">
             <span class="row-text">
-              <span class="row-label">Vzdálenost</span>
+              <label class="row-label" for="distance" id="distanceLabel">Vzdálenost</label>
               <span class="row-hint" id="distanceHint" data-hint=""></span>
             </span>
             <span class="row-field">
               <input class="row-input" type="text" id="distance" placeholder="0" autocomplete="off"
-                inputmode="decimal" enterkeyhint="next" aria-describedby="distanceHint" />
-              <span class="row-unit">km</span>
+                inputmode="decimal" enterkeyhint="next" aria-labelledby="distanceLabel distanceUnit"
+                aria-describedby="distanceHint" />
+              <span class="row-unit" id="distanceUnit">km</span>
             </span>
-          </label>
-          <label class="row" for="consumption">
+          </div>
+          <div class="row" data-row="consumption">
             <span class="row-text">
-              <span class="row-label">Spotřeba</span>
-              <span class="row-hint" id="consumptionHint" data-hint=""></span>
+              <label class="row-label" for="consumption" id="consumptionLabel">Spotřeba</label>
+              <span class="row-hint" id="consumptionHint" data-hint="na 100 km">na 100 km</span>
             </span>
             <span class="row-field">
               <input class="row-input" type="text" id="consumption" placeholder="0,0" autocomplete="off" value="5,9"
-                inputmode="decimal" enterkeyhint="next" aria-describedby="consumptionHint" />
-              <span class="row-unit">l/100 km</span>
+                inputmode="decimal" enterkeyhint="next" aria-labelledby="consumptionLabel consumptionUnit"
+                aria-describedby="consumptionHint" />
+              <span class="row-unit" id="consumptionUnit">l</span>
             </span>
-          </label>
-          <label class="row" for="price">
+          </div>
+          <div class="row" data-row="price">
             <span class="row-text">
-              <span class="row-label">Cena paliva</span>
+              <label class="row-label" for="price" id="priceLabel">Cena paliva</label>
               <span class="row-hint" id="priceHint" data-hint=""></span>
             </span>
             <span class="row-field">
               <input class="row-input" type="text" id="price" placeholder="0,00" autocomplete="off"
-                inputmode="decimal" enterkeyhint="done" aria-describedby="priceHint" />
-              <span class="row-unit">Kč/l</span>
+                inputmode="decimal" enterkeyhint="done" aria-labelledby="priceLabel priceUnit"
+                aria-describedby="priceHint" />
+              <span class="row-unit" id="priceUnit">Kč/l</span>
             </span>
-          </label>
+          </div>
         </div>
 
         <div class="save-bar">
@@ -184,8 +188,8 @@
 
       <div class="empty" id="statsEmpty" hidden>
         <span class="empty-icon"><svg width="28" height="28" aria-hidden="true"><use href="#i-chart" /></svg></span>
-        <p class="empty-title">Zatím tu nic není</p>
-        <p class="empty-text">Po první uložené jízdě tady uvidíš náklady, spotřebu a vývoj po měsících.</p>
+        <p class="empty-title" id="statsEmptyTitle">Zatím tu nic není</p>
+        <p class="empty-text" id="statsEmptyText">Po první uložené jízdě tady uvidíš náklady, spotřebu a vývoj po měsících.</p>
         <button type="button" class="btn btn-primary btn-pill" data-goto="entry">
           <svg width="18" height="18" aria-hidden="true"><use href="#i-plus" /></svg><span>Přidat jízdu</span>
         </button>
@@ -286,7 +290,7 @@
     <div class="sheet-panel">
       <div class="sheet-head">
         <div class="sheet-grabber" aria-hidden="true"></div>
-        <h2 class="sheet-title sheet-title-sm" id="tripSheetTitle">Detail jízdy</h2>
+        <h2 class="sheet-title sheet-title-sm sheet-title-center" id="tripSheetTitle">Detail jízdy</h2>
         <button class="icon-btn icon-btn-sm" type="button" data-sheet-close aria-label="Zavřít">
           <svg width="16" height="16" aria-hidden="true"><use href="#i-close" /></svg>
         </button>

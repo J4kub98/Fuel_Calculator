@@ -85,7 +85,10 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          if (response.ok) {
+          // Jako aplikaci cachujeme jen HTML stránku aplikace
+          const type = response.headers.get('content-type') || '';
+          const isAppShell = url.pathname === '/' || url.pathname === '/index.html';
+          if (response.ok && isAppShell && type.includes('text/html')) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put('/', clone));
           }

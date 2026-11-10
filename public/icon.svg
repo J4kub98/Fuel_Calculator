@@ -1,19 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#1c1c1f"/>
-      <stop offset="1" stop-color="#0b0b0c"/>
-    </linearGradient>
-    <linearGradient id="fuel" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#5b93ff"/>
-      <stop offset="1" stop-color="#2563eb"/>
-    </linearGradient>
-    <clipPath id="drop">
-      <path d="M256 104c-24 34-110 134-110 214a110 110 0 0 0 220 0c0-80-86-180-110-214Z"/>
-    </clipPath>
-  </defs>
-  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <rect x="120" y="322" width="272" height="120" fill="url(#fuel)" clip-path="url(#drop)"/>
-  <path d="M256 104c-24 34-110 134-110 214a110 110 0 0 0 220 0c0-80-86-180-110-214Z" fill="none" stroke="#0b0b0c" stroke-width="58" stroke-linejoin="round"/>
-  <path d="M256 104c-24 34-110 134-110 214a110 110 0 0 0 220 0c0-80-86-180-110-214Z" fill="none" stroke="#ffffff" stroke-width="22" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c1c1f"/><stop offset="1" stop-color="#0b0b0c"/></linearGradient><linearGradient id="fuel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b93ff"/><stop offset="1" stop-color="#2563eb"/></linearGradient></defs>
+<rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <g transform="translate(-18 0)">
+    <rect x="183" y="256" width="122" height="114" rx="14" fill="url(#fuel)"/>
+    <rect x="161" y="118" width="166" height="274" rx="36" fill="none" stroke="#fff" stroke-width="22"/>
+    <rect x="191" y="152" width="106" height="64" rx="12" fill="#fff"/>
+    <path d="M327 196h20a26 26 0 0 1 26 26v108a20 20 0 0 0 40 0V200l-36-38" fill="none" stroke="#fff" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M128 392h232" stroke="#fff" stroke-width="22" stroke-linecap="round"/>
+  </g>
 </svg>

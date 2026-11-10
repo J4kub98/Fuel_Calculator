@@ -145,6 +145,7 @@
   // ── Stav aplikace ──
   let trips = [];
   let isLoading = true;
+  let loadFailed = false;
   let isSaving = false;
   let selectedMonth = null; // null (bez dat) | 'all' | 'YYYY-MM'
   let activeView = 'entry';
@@ -233,7 +234,7 @@
   function updatePriceHint() {
     let hint = '';
     if (priceAutoFilled) hint = 'Z minulého tankování';
-    else if (getLastRefuelPrice() === null) hint = 'U první jízdy stejná jako dnešní cena';
+    else if (getLastRefuelPrice() === null && !loadFailed && !isLoading) hint = 'U první jízdy stejná jako dnešní cena';
     setHint('price', hint);
   }
 
@@ -260,12 +261,13 @@
   }
 
   // Povolí jen číslice a jeden desetinný oddělovač (zobrazený jako čárka).
-  // Při vložení „1.234,5“ nebo „1,234.5“ je desetinný oddělovač ten poslední.
-  function normalizeDecimal(raw) {
+  // Při psaní platí první oddělovač (další se ignorují). Při vložení
+  // „1.234,5“ nebo „1,234.5“ je desetinný oddělovač ten poslední.
+  function normalizeDecimal(raw, { pasted = false } = {}) {
     let clean = raw.replace(/[^\d.,]/g, '');
     const lastSep = Math.max(clean.lastIndexOf(','), clean.lastIndexOf('.'));
     const hasBoth = clean.includes(',') && clean.includes('.');
-    if (hasBoth && lastSep !== -1) {
+    if (pasted && hasBoth && lastSep !== -1) {
       clean = clean.slice(0, lastSep).replace(/[.,]/g, '') + ',' + clean.slice(lastSep + 1).replace(/[.,]/g, '');
     } else {
       clean = clean.replace(/\./g, ',');
@@ -275,9 +277,10 @@
     return clean;
   }
 
-  function sanitizeDecimalInput(input) {
+  function sanitizeDecimalInput(input, inputType = '') {
     const raw = input.value;
-    const clean = normalizeDecimal(raw);
+    const pasted = inputType === 'insertFromPaste' || inputType === 'insertFromDrop';
+    const clean = normalizeDecimal(raw, { pasted });
     if (clean !== raw) {
       const pos = input.selectionStart;
       input.value = clean;
@@ -344,8 +347,14 @@
       costEl.classList.add('is-empty');
       costEl.innerHTML = amountHTML(0);
       costEl._value = 0;
-      summary.classList.add('is-empty');
-      summary.textContent = '0,00 l · 0,00 Kč/km';
+      const missing = [
+        dist <= 0 && 'vzdálenost',
+        cons <= 0 && 'spotřebu',
+        price <= 0 && 'cenu paliva',
+      ].filter(Boolean);
+      summary.textContent = `Doplň ${missing.length > 1
+        ? `${missing.slice(0, -1).join(', ')} a ${missing[missing.length - 1]}`
+        : missing[0]}`;
       return null;
     }
 
@@ -356,7 +365,6 @@
     costEl.classList.remove('is-empty');
     costEl.innerHTML = amountHTML(cost);
     costEl._value = cost;
-    summary.classList.remove('is-empty');
     summary.textContent = `${fmt(liters, 2)} l · ${fmt(perKm, 2)} Kč/km`;
 
     // Čtečkám oznámíme výsledek až po dopsání čísla
@@ -530,14 +538,15 @@
 
   function selectMonth(value, { focusFrom } = {}) {
     if (value === selectedMonth) return;
+    // Kontejner zjistíme před překreslením — tlačítko pak už v DOM nebude
+    const container = focusFrom ? focusFrom.closest('[data-month-chips], .chart') : null;
+    const hadFocus = focusFrom && document.activeElement === focusFrom;
     selectedMonth = value;
     renderMonthChips();
     renderStats();
     renderHistory();
-    // Překreslení chipů by jinak ztratilo fokus klávesnice
-    if (focusFrom) {
-      const container = focusFrom.closest('[data-month-chips], .chart');
-      const target = container && container.querySelector(`[data-month="${value}"]`);
+    if (container && hadFocus) {
+      const target = container.querySelector(`[data-month="${value}"]`);
       if (target) target.focus({ preventScroll: true });
     }
   }
@@ -552,6 +561,12 @@
     const hasTrips = trips.length > 0 && !isLoading;
     $('statsContent').hidden = !hasTrips && !isLoading;
     $('statsEmpty').hidden = hasTrips || isLoading;
+    if (!hasTrips && !isLoading) {
+      $('statsEmptyTitle').textContent = loadFailed ? 'Data se nenačetla' : 'Zatím tu nic není';
+      $('statsEmptyText').textContent = loadFailed
+        ? 'Zkontroluj připojení k internetu a zkus to znovu.'
+        : 'Po první uložené jízdě tady uvidíš náklady, spotřebu a vývoj po měsících.';
+    }
     if (!hasTrips) return;
 
     const filtered  = getFilteredTrips();
@@ -681,6 +696,17 @@
 
     if (isLoading) {
       el.innerHTML = `<div class="group" aria-hidden="true">${'<div class="skeleton-row"><span></span><span></span></div>'.repeat(3)}</div>`;
+      return;
+    }
+
+    if (loadFailed && !trips.length) {
+      el.innerHTML = `
+        <div class="empty">
+          <span class="empty-icon">${icon('i-alert', 28)}</span>
+          <p class="empty-title">Historie se nenačetla</p>
+          <p class="empty-text">Zkontroluj připojení k internetu a zkus to znovu.</p>
+          <button type="button" class="btn btn-primary btn-pill" data-retry>Zkusit znovu</button>
+        </div>`;
       return;
     }
 
@@ -1167,8 +1193,8 @@
     $('entryForm').addEventListener('submit', saveTrip);
 
     inputIds.forEach((id) => {
-      $(id).addEventListener('input', () => {
-        sanitizeDecimalInput($(id));
+      $(id).addEventListener('input', (e) => {
+        sanitizeDecimalInput($(id), e.inputType);
         clearInvalid(id);
       });
     });
@@ -1187,8 +1213,8 @@
     $('refuelPrice').addEventListener('input', () => {
       // U prvního záznamu není k dispozici dřívější cena. Použijeme proto
       // aktuálně zadanou cenu také pro výpočet této jízdy.
-      if (isLoading) {
-        updateSaveState();
+      if (isLoading || loadFailed) {
+        calculate();
         return;
       }
       if (getLastRefuelPrice() === null &&
@@ -1217,6 +1243,14 @@
       tab.addEventListener('click', () => switchView(tab.dataset.view));
     });
 
+    // Klepnutí kamkoli na řádek formuláře zaměří jeho pole
+    document.querySelectorAll('.row[data-row]').forEach((row) => {
+      row.addEventListener('click', (e) => {
+        if (e.target.closest('input, label')) return;
+        $(row.dataset.row).focus();
+      });
+    });
+
     // Výběr měsíce (chipy i sloupce grafu) + otevření detailu jízdy
     document.addEventListener('click', (e) => {
       const monthBtn = e.target.closest('[data-month]');
@@ -1227,6 +1261,10 @@
       const tripBtn = e.target.closest('[data-trip-id]');
       if (tripBtn) {
         openTrip(tripBtn.dataset.tripId);
+        return;
+      }
+      if (e.target.closest('[data-retry]')) {
+        loadData();
         return;
       }
       const gotoBtn = e.target.closest('[data-goto]');
@@ -1259,15 +1297,38 @@
     calculate();
     renderAll();
 
+    await loadData();
+  }
+
+  async function loadData() {
+    isLoading = true;
+    loadFailed = false;
+    renderHistory();
+
+    // Session a jízdy zkoušíme zvlášť: offline může existující cookie
+    // a jízdy z cache service workeru pořád stačit.
     try {
       await ensureSession();
+    } catch {
+      // Pokračujeme — načtení jízd ukáže, jestli je relace použitelná.
+    }
+    try {
       await fetchTrips();
     } catch {
+      loadFailed = true;
       showToast(navigator.onLine === false ? 'Jsi offline — data se nenačetla' : 'Nepodařilo se načíst data', 'error');
     }
     isLoading = false;
     renderAll();
     fillLastPrice();
+
+    // U prvního tankování zadaného během načítání doplníme cenu jízdy
+    if (!loadFailed && getLastRefuelPrice() === null && $('price').value === '' && $('refuelPrice').value !== '') {
+      $('price').value = $('refuelPrice').value;
+      priceMirrorsRefuelPrice = true;
+      clearInvalid('price');
+      calculate();
+    }
   }
 
   init();
