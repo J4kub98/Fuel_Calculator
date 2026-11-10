@@ -1,7 +1,7 @@
 // Service Worker pro Fuel Calculator PWA
 // Zajišťuje offline funkčnost a cachování statických assetů.
 
-const CACHE_NAME = 'fuel-tool-v11';
+const CACHE_NAME = 'fuel-tool-v12';
 
 // Statické assety, které se cachují při instalaci SW
 const STATIC_ASSETS = [
@@ -9,10 +9,14 @@ const STATIC_ASSETS = [
   '/index.html',
   '/style.css',
   '/script.js',
+  '/theme.js',
   '/manifest.json',
   '/icon.svg',
   '/icon-192.png',
   '/icon-512.png',
+  '/apple-touch-icon.png',
+  '/fonts/inter-latin-wght-normal.woff2',
+  '/fonts/inter-latin-ext-wght-normal.woff2',
 ];
 
 // Instalace SW — předcachujeme všechny statické assety

@@ -37,7 +37,7 @@
   ],
   "headers": [
     {
-      "source": "/(icon-192\\.png|icon-512\\.png|icon\\.svg|manifest\\.json)",
+      "source": "/(icon-192\\.png|icon-512\\.png|icon\\.svg|apple-touch-icon\\.png|manifest\\.json|fonts/.*)",
       "headers": [
         {
           "key": "Cache-Control",

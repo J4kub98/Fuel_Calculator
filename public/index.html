@@ -3,229 +3,350 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Fuel Calculator</title>
+  <meta name="description" content="Kalkulátor spotřeby paliva a nákladů na jízdu">
+
   <!-- PWA -->
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#f4f4f5" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f2f2f4" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Fuel Calculator">
-  <link rel="apple-touch-icon" href="/icon-192.png">
-  <link rel="stylesheet" href="style.css?v=15">
+  <meta name="apple-mobile-web-app-title" content="Fuel">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+  <link rel="preload" href="/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="style.css?v=2.0.0">
+  <!-- Nastaví motiv ještě před vykreslením, aby neproblikl světlý vzhled -->
+  <script src="theme.js?v=2.0.0"></script>
 </head>
 
 <body>
+  <svg class="sprite" aria-hidden="true" focusable="false">
+    <symbol id="i-drop" viewBox="0 0 24 24">
+      <path d="M12 3.2c-.9 1.3-6 7.4-6 11.3a6 6 0 0 0 12 0c0-3.9-5.1-10-6-11.3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+    </symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24">
+      <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    </symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24">
+      <path d="M5 20V11M12 20V4M19 20v-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    </symbol>
+    <symbol id="i-list" viewBox="0 0 24 24">
+      <path d="M9 6h11M9 12h11M9 18h11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      <circle cx="4.5" cy="6" r="1.25" fill="currentColor" />
+      <circle cx="4.5" cy="12" r="1.25" fill="currentColor" />
+      <circle cx="4.5" cy="18" r="1.25" fill="currentColor" />
+    </symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24">
+      <path d="M10.3 3.6a1.7 1.7 0 0 1 3.4 0l.1.6a1.7 1.7 0 0 0 2.5 1l.5-.3a1.7 1.7 0 0 1 2.4 2.4l-.3.5a1.7 1.7 0 0 0 1 2.5l.6.1a1.7 1.7 0 0 1 0 3.4l-.6.1a1.7 1.7 0 0 0-1 2.5l.3.5a1.7 1.7 0 0 1-2.4 2.4l-.5-.3a1.7 1.7 0 0 0-2.5 1l-.1.6a1.7 1.7 0 0 1-3.4 0l-.1-.6a1.7 1.7 0 0 0-2.5-1l-.5.3a1.7 1.7 0 0 1-2.4-2.4l.3-.5a1.7 1.7 0 0 0-1-2.5l-.6-.1a1.7 1.7 0 0 1 0-3.4l.6-.1a1.7 1.7 0 0 0 1-2.5l-.3-.5a1.7 1.7 0 0 1 2.4-2.4l.5.3a1.7 1.7 0 0 0 2.5-1l.1-.6Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+      <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.7" />
+    </symbol>
+    <symbol id="i-close" viewBox="0 0 24 24">
+      <path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+    </symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24">
+      <rect x="8.5" y="8.5" width="11" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8" />
+      <path d="M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2" fill="none" stroke="currentColor" stroke-width="1.8" />
+    </symbol>
+    <symbol id="i-check" viewBox="0 0 24 24">
+      <path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+    </symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24">
+      <path d="M12 8v5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+      <circle cx="12" cy="16.5" r="1.2" fill="currentColor" />
+      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8" />
+    </symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24">
+      <path d="M4.5 7h15M9.5 7V5.2c0-.7.5-1.2 1.2-1.2h2.6c.7 0 1.2.5 1.2 1.2V7M6.5 7l.8 11.3c.1 1 .9 1.7 1.9 1.7h5.6c1 0 1.8-.7 1.9-1.7L17.5 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+    </symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24">
+      <path d="m9.5 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    </symbol>
+    <symbol id="i-pump" viewBox="0 0 24 24">
+      <path d="M4.5 20.5V5.5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v15M3 20.5h13M7.5 7.5h4v3.5h-4zM14.5 10h1.5a1.5 1.5 0 0 1 1.5 1.5v4.25a1.25 1.25 0 0 0 2.5 0V8.6a2 2 0 0 0-.6-1.4L17 4.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+    </symbol>
+  </svg>
 
-  <!-- Settings button — fixed top-right -->
-  <button class="settings-btn" id="btnOpenSettings" title="Nastavení">
-    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="3"></circle>
-      <path stroke-linecap="round" stroke-linejoin="round"
-        d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z">
-      </path>
-    </svg>
-  </button>
-
-  <div class="settings-overlay" id="settingsOverlay"></div>
-
-  <div class="settings-drawer" id="settingsDrawer">
-    <div class="settings-drawer-header">
-      <h2>Nastavení</h2>
-      <button class="settings-close" id="btnCloseSettings">
-        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
+  <!-- Horní lišta — kompaktní titulek se objeví po odscrollování velkého nadpisu -->
+  <header class="topbar" id="topbar">
+    <div class="topbar-inner">
+      <div class="brand" aria-hidden="true">
+        <span class="brand-mark">
+          <svg width="16" height="16"><use href="#i-drop" /></svg>
+        </span>
+      </div>
+      <div class="topbar-title" id="topbarTitle" aria-hidden="true">Nová jízda</div>
+      <button class="icon-btn" id="btnOpenSettings" type="button" aria-label="Nastavení" aria-haspopup="dialog">
+        <svg width="20" height="20" aria-hidden="true"><use href="#i-gear" /></svg>
       </button>
     </div>
+  </header>
 
-    <div class="settings-section">
-      <div class="settings-section-title">Vzhled</div>
+  <main class="app" id="app">
 
-      <div
-        style="display:flex; justify-content:space-between; align-items:center; margin-bottom:32px; padding: 20px; background: var(--bg-input); border-radius: 16px; border: 1px solid var(--border-soft);">
-        <div>
-          <div style="font-weight:700; font-size:0.9rem; color:var(--text-main); margin-bottom:4px;">Tmavý režim</div>
-          <div style="font-size:0.8rem; color:var(--text-mut);">Přepnout vzhled aplikace</div>
+    <!-- ── NOVÁ JÍZDA ── -->
+    <section class="view is-active" id="view-entry" data-title="Nová jízda" aria-labelledby="entryTitle">
+      <h1 class="large-title" id="entryTitle">Nová jízda</h1>
+
+      <div class="hero" id="calcHero">
+        <div class="hero-label">Náklady jízdy</div>
+        <div class="amount amount-xl is-empty" id="resultCost">
+          <span class="amount-int">0</span><span class="amount-dec">,00</span><span class="amount-cur">Kč</span>
         </div>
-        <label style="position:relative; width:52px; height:28px; cursor:pointer;">
-          <input type="checkbox" id="darkModeToggle" style="opacity:0; width:0; height:0;" />
-          <span
-            style="position:absolute; top:0; left:0; right:0; bottom:0; background:var(--bg-btn-sec-hover); border-radius:14px; transition:.3s;"></span>
-          <span id="dmKnob"
-            style="position:absolute; content:''; height:20px; width:20px; left:4px; bottom:4px; background:var(--text-main); border-radius:50%; transition:.3s;"></span>
-        </label>
+        <div class="hero-meta">
+          <div class="meta">
+            <span class="meta-label">Spotřebováno</span>
+            <span class="meta-value" id="resultLiters">—</span>
+          </div>
+          <span class="meta-sep" aria-hidden="true"></span>
+          <div class="meta">
+            <span class="meta-label">Cena za km</span>
+            <span class="meta-value" id="resultPerKm">—</span>
+          </div>
+        </div>
       </div>
 
-      <div class="settings-section-title">Moje zařízení</div>
-      <p class="settings-description">
-        Tvoje data jsou navázaná na bezpečnou relaci tohoto prohlížeče.
-        Pro přístup z jiného zařízení můžeš importovat stejné ID.
-      </p>
-      <div
-        style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); padding: 12px; border-radius: 8px; margin-bottom: 16px;">
-        <p style="margin: 0; font-size: 0.85rem; color: var(--text-main); font-weight: 500;">
-          <span style="font-size: 1.1em; margin-right: 4px;">⚠️</span>
-          Doporučujeme si ID zkopírovat a někam uložit (např. do poznámek). Slouží jako záloha pro případ, že promažeš
-          data prohlížeče.
+      <form class="entry-form" id="entryForm" novalidate>
+        <div class="group-head">
+          <span class="step" aria-hidden="true">1</span>
+          <h2 class="group-title" id="refuelGroupTitle">Dnešní tankování</h2>
+        </div>
+        <div class="group" role="group" aria-labelledby="refuelGroupTitle">
+          <label class="row" for="refuelPrice">
+            <span class="row-label">Cena za litr</span>
+            <span class="row-field">
+              <input class="row-input" type="text" id="refuelPrice" placeholder="0,00" autocomplete="off" inputmode="decimal" enterkeyhint="next" aria-describedby="refuelPriceHint" />
+              <span class="row-unit">Kč/l</span>
+            </span>
+          </label>
+        </div>
+        <p class="group-foot" id="refuelPriceHint">Uložíme ji a použijeme pro výpočet příští jízdy.</p>
+
+        <div class="group-head">
+          <span class="step" aria-hidden="true">2</span>
+          <h2 class="group-title" id="tripGroupTitle">Jízda od minulého tankování</h2>
+        </div>
+        <div class="group" role="group" aria-labelledby="tripGroupTitle">
+          <label class="row" for="distance">
+            <span class="row-label">Vzdálenost</span>
+            <span class="row-field">
+              <input class="row-input" type="text" id="distance" placeholder="0" autocomplete="off" inputmode="decimal" enterkeyhint="next" />
+              <span class="row-unit">km</span>
+            </span>
+          </label>
+          <label class="row" for="consumption">
+            <span class="row-label">Spotřeba</span>
+            <span class="row-field">
+              <input class="row-input" type="text" id="consumption" placeholder="0,0" autocomplete="off" value="5,9" inputmode="decimal" enterkeyhint="next" />
+              <span class="row-unit">l/100 km</span>
+            </span>
+          </label>
+          <label class="row" for="price">
+            <span class="row-label">Cena paliva</span>
+            <span class="row-field">
+              <input class="row-input" type="text" id="price" placeholder="0,00" autocomplete="off" inputmode="decimal" enterkeyhint="done" aria-describedby="priceHint" />
+              <span class="row-unit">Kč/l</span>
+            </span>
+          </label>
+        </div>
+        <p class="group-foot" id="priceHint">Cenu paliva doplníme z minulého tankování.</p>
+
+        <div class="save-bar">
+          <button class="btn btn-primary btn-block" id="btnSave" type="submit">Uložit tankování a jízdu</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ── PŘEHLED ── -->
+    <section class="view" id="view-stats" data-title="Přehled" aria-labelledby="statsTitle" hidden>
+      <h1 class="large-title" id="statsTitle">Přehled</h1>
+
+      <div class="chips" data-month-chips role="group" aria-label="Období"></div>
+
+      <div class="hero hero-start">
+        <div class="hero-label" id="statPeriodLabel">Náklady celkem</div>
+        <div class="amount amount-xl" id="statCost">
+          <span class="amount-int">0</span><span class="amount-cur">Kč</span>
+        </div>
+        <div class="hero-sub" id="statSummary">Zatím žádné jízdy</div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="card-head">
+          <span class="card-title">Náklady po měsících</span>
+          <span class="card-aside" id="chartAvg"></span>
+        </div>
+        <div class="chart" id="costChart" role="group" aria-label="Náklady za posledních 6 měsíců"></div>
+      </div>
+
+      <div class="tiles">
+        <div class="tile">
+          <span class="tile-label">Ujeto</span>
+          <span class="tile-value"><span id="statKm">0</span><span class="tile-unit">km</span></span>
+        </div>
+        <div class="tile">
+          <span class="tile-label">Spotřebováno</span>
+          <span class="tile-value"><span id="statLiters">0</span><span class="tile-unit">l</span></span>
+        </div>
+        <div class="tile">
+          <span class="tile-label">Počet jízd</span>
+          <span class="tile-value"><span id="statTrips">0</span></span>
+        </div>
+        <div class="tile">
+          <span class="tile-label">Průměrná spotřeba</span>
+          <span class="tile-value"><span id="statAvgCons">0</span><span class="tile-unit">l/100 km</span></span>
+        </div>
+        <div class="tile">
+          <span class="tile-label">Průměr na jízdu</span>
+          <span class="tile-value"><span id="statAvgKm">0</span><span class="tile-unit">km</span></span>
+        </div>
+        <div class="tile">
+          <span class="tile-label">Průměr na jízdu</span>
+          <span class="tile-value"><span id="statAvgCost">0</span><span class="tile-unit">Kč</span></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── HISTORIE ── -->
+    <section class="view" id="view-history" data-title="Historie" aria-labelledby="historyTitle" hidden>
+      <h1 class="large-title" id="historyTitle">Historie</h1>
+      <div class="chips" data-month-chips role="group" aria-label="Období"></div>
+      <div class="history" id="historyList"></div>
+    </section>
+
+  </main>
+
+  <!-- Spodní navigace -->
+  <nav class="tabbar" id="tabbar" aria-label="Hlavní navigace">
+    <span class="tab-indicator" id="tabIndicator" aria-hidden="true"></span>
+    <button class="tab is-active" type="button" data-view="entry" aria-current="page">
+      <svg width="22" height="22" aria-hidden="true"><use href="#i-plus" /></svg>
+      <span>Jízda</span>
+    </button>
+    <button class="tab" type="button" data-view="stats">
+      <svg width="22" height="22" aria-hidden="true"><use href="#i-chart" /></svg>
+      <span>Přehled</span>
+    </button>
+    <button class="tab" type="button" data-view="history">
+      <svg width="22" height="22" aria-hidden="true"><use href="#i-list" /></svg>
+      <span>Historie</span>
+    </button>
+  </nav>
+
+  <!-- ── NASTAVENÍ ── -->
+  <dialog class="sheet" id="settingsSheet" aria-labelledby="settingsTitle">
+    <div class="sheet-backdrop" data-sheet-close></div>
+    <div class="sheet-panel">
+      <div class="sheet-grabber" aria-hidden="true"></div>
+      <div class="sheet-head">
+        <h2 class="sheet-title" id="settingsTitle">Nastavení</h2>
+        <button class="icon-btn icon-btn-sm" type="button" data-sheet-close aria-label="Zavřít">
+          <svg width="16" height="16" aria-hidden="true"><use href="#i-close" /></svg>
+        </button>
+      </div>
+
+      <div class="sheet-body">
+        <div class="section-label" id="themeLabel">Vzhled</div>
+        <div class="segmented" id="themeControl" role="group" aria-labelledby="themeLabel">
+          <span class="segmented-thumb" aria-hidden="true"></span>
+          <button type="button" data-theme-value="auto">Automaticky</button>
+          <button type="button" data-theme-value="light">Světlý</button>
+          <button type="button" data-theme-value="dark">Tmavý</button>
+        </div>
+
+        <div class="section-label">Moje zařízení</div>
+        <div class="group">
+          <div class="id-row">
+            <div class="id-text">
+              <span class="id-caption">ID zařízení</span>
+              <code class="id-value" id="deviceIdDisplay">—</code>
+            </div>
+            <button class="pill-btn" id="btnCopyId" type="button">
+              <svg width="16" height="16" aria-hidden="true"><use href="#i-copy" /></svg>
+              <span>Kopírovat</span>
+            </button>
+          </div>
+        </div>
+        <p class="group-foot">
+          ID je záloha tvých dat. Ulož si ho třeba do poznámek a pomocí něj obnovíš historii v jiném prohlížeči nebo
+          po smazání dat.
         </p>
-      </div>
 
-      <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:32px;">
-        <code class="device-id-box" id="deviceIdDisplay"></code>
-        <button class="btn-secondary" id="btnCopyId" style="width: 100%; justify-content: center;">Kopírovat</button>
-        <input type="text" id="importIdInput" placeholder="Vlož ID z jiného zařízení" autocomplete="off"
-          style="width:100%;" />
-        <button class="btn-secondary" id="btnImportId" style="width: 100%; justify-content: center;">Importovat
-          ID</button>
+        <div class="group">
+          <div class="import-row">
+            <label class="visually-hidden" for="importIdInput">ID z jiného zařízení</label>
+            <input class="text-input" type="text" id="importIdInput" placeholder="Vlož ID z jiného zařízení"
+              autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" />
+            <button class="pill-btn pill-btn-accent" id="btnImportId" type="button">Importovat</button>
+          </div>
+        </div>
+
+        <div class="section-label">Data</div>
+        <div class="group">
+          <button class="list-btn list-btn-danger" id="btnClearAll" type="button">
+            <svg width="20" height="20" aria-hidden="true"><use href="#i-trash" /></svg>
+            <span>Smazat celou historii</span>
+          </button>
+        </div>
+
+        <p class="sheet-footnote">Fuel Calculator · v2.0.0</p>
       </div>
     </div>
+  </dialog>
 
-    <div class="settings-footer">
-      <p>v1.2.2</p>
+  <!-- ── DETAIL JÍZDY ── -->
+  <dialog class="sheet" id="tripSheet" aria-labelledby="tripSheetTitle">
+    <div class="sheet-backdrop" data-sheet-close></div>
+    <div class="sheet-panel">
+      <div class="sheet-grabber" aria-hidden="true"></div>
+      <div class="sheet-head">
+        <h2 class="sheet-title sheet-title-sm" id="tripSheetTitle">Detail jízdy</h2>
+        <button class="icon-btn icon-btn-sm" type="button" data-sheet-close aria-label="Zavřít">
+          <svg width="16" height="16" aria-hidden="true"><use href="#i-close" /></svg>
+        </button>
+      </div>
+      <div class="sheet-body">
+        <div class="trip-hero">
+          <div class="amount amount-lg" id="tripSheetCost"></div>
+          <div class="hero-sub" id="tripSheetDate"></div>
+        </div>
+        <div class="group detail-list" id="tripSheetRows"></div>
+        <button class="btn btn-danger btn-block" id="btnDeleteTrip" type="button">
+          <svg width="18" height="18" aria-hidden="true"><use href="#i-trash" /></svg>
+          <span>Smazat jízdu</span>
+        </button>
+      </div>
     </div>
+  </dialog>
+
+  <!-- ── POTVRZENÍ ── -->
+  <dialog class="sheet sheet-alert" id="confirmSheet" aria-labelledby="confirmTitle" aria-describedby="confirmMessage">
+    <div class="sheet-backdrop" data-sheet-close></div>
+    <div class="sheet-panel">
+      <div class="sheet-body">
+        <div class="alert-icon" id="confirmIcon" aria-hidden="true">
+          <svg width="22" height="22"><use href="#i-alert" /></svg>
+        </div>
+        <h2 class="alert-title" id="confirmTitle"></h2>
+        <p class="alert-message" id="confirmMessage"></p>
+        <div class="alert-actions">
+          <button class="btn btn-primary btn-block" id="confirmOk" type="button"></button>
+          <button class="btn btn-ghost btn-block" id="confirmCancel" type="button" data-sheet-close>Zrušit</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <span class="toast-icon" id="toastIcon" aria-hidden="true"></span>
+    <span class="toast-text" id="toastText"></span>
   </div>
 
-  <div class="container">
-    <div>
-      <h1>Kalkulátor paliva</h1>
-      <p class="subtitle">Sleduj náklady a kilometry každé jízdy</p>
-    </div>
-
-    <!-- CALCULATOR CARD -->
-    <div class="card">
-      <div class="card-title">Nový záznam</div>
-
-      <section class="refuel-step" aria-labelledby="refuelStepTitle">
-        <div class="step-heading">
-          <span class="step-index" aria-hidden="true">1</span>
-          <h2 class="step-title" id="refuelStepTitle">Aktuální tankování</h2>
-        </div>
-        <div class="field refuel-price-field">
-          <label>Cena za litr</label>
-          <div class="input-wrap">
-            <input type="number" id="refuelPrice" placeholder="0.00" step="0.01" min="0" inputmode="decimal" aria-describedby="refuelPriceHint" />
-            <span class="unit">Kč/l</span>
-          </div>
-          <div id="refuelPriceHint" class="input-hint">Použijeme při příští jízdě.</div>
-        </div>
-      </section>
-
-      <div class="journey-step-heading">
-        <span class="step-index" aria-hidden="true">2</span>
-        <span>Jízda od minulého tankování</span>
-      </div>
-
-      <div class="inputs-grid">
-        <div class="field">
-          <label>Vzdálenost</label>
-          <div class="input-wrap">
-            <input type="number" id="distance" placeholder="0" step="0.1" min="0" />
-            <span class="unit">km</span>
-          </div>
-        </div>
-        <div class="field">
-          <label>Spotřeba</label>
-          <div class="input-wrap">
-            <input type="number" id="consumption" placeholder="0.0" step="0.1" min="0" value="5.9" />
-            <span class="unit">l/100</span>
-          </div>
-        </div>
-        <div class="field">
-          <label>Cena paliva</label>
-          <div class="input-wrap">
-            <input type="number" id="price" placeholder="0.00" step="0.01" min="0" aria-describedby="priceHint" />
-            <span class="unit">Kč/l</span>
-          </div>
-          <div id="priceHint" class="input-hint">Doplněno z minulého tankování.</div>
-        </div>
-      </div>
-
-      <!-- Result -->
-      <div class="result-row">
-        <div class="result-box">
-          <div class="r-label">Spotřebováno</div>
-          <div class="r-value" id="resultLiters">—</div>
-          <div class="r-unit">litrů</div>
-        </div>
-        <div class="result-box highlight">
-          <div class="r-label">Náklady</div>
-          <div class="r-value cost" id="resultCost">—</div>
-          <div class="r-unit">korun</div>
-        </div>
-        <div class="result-box">
-          <div class="r-label">Cena / km</div>
-          <div class="r-value" id="resultPerKm">—</div>
-          <div class="r-unit">Kč/km</div>
-        </div>
-      </div>
-
-      <div class="btn-row">
-        <button class="btn-primary" id="btnSave">Uložit tankování a jízdu</button>
-      </div>
-    </div>
-
-    <!-- STATS CARD -->
-    <div class="card">
-      <div class="stats-head">
-        <div class="card-title" style="margin-bottom:0">Statistiky</div>
-        <div class="month-filter">
-          <label>Měsíc:</label>
-          <select id="monthSelect"></select>
-          <button class="btn-secondary" id="btnResetFilter" style="padding:8px 12px; font-size:0.75rem;">Vše</button>
-        </div>
-      </div>
-
-      <div class="stats-grid">
-        <div class="stat-box">
-          <div class="s-value" id="statKm">0</div>
-          <div class="s-label">km celkem</div>
-        </div>
-        <div class="stat-box">
-          <div class="s-value" id="statLiters">0</div>
-          <div class="s-label">litrů celkem</div>
-        </div>
-        <div class="stat-box">
-          <div class="s-value" id="statCost">0</div>
-          <div class="s-label">Kč celkem</div>
-        </div>
-        <div class="stat-box">
-          <div class="s-value" id="statTrips">0</div>
-          <div class="s-label">jízd</div>
-        </div>
-        <div class="stat-box">
-          <div class="s-value" id="statAvgKm">0</div>
-          <div class="s-label">průměr km/jízda</div>
-        </div>
-        <div class="stat-box">
-          <div class="s-value" id="statAvgCost">0</div>
-          <div class="s-label">průměr Kč/jízda</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- HISTORY CARD -->
-    <div class="card">
-      <div class="history-head">
-        <div class="card-title" style="margin-bottom:0">Historie jízd</div>
-        <button class="btn-secondary" id="btnClearAll">Vše smazat</button>
-      </div>
-      <div class="history-list" id="historyList"></div>
-    </div>
-
-  </div>
-
-  <div class="toast" id="toast"></div>
-
-  <script src="script.js?v=1.2.2"></script>
-  <!-- Registrace service workera pro PWA offline funkčnost -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js');
-    }
-  </script>
+  <script src="script.js?v=2.0.0"></script>
 </body>
 
 </html>

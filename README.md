@@ -6,6 +6,14 @@ The repository is safe to keep public because sensitive values are loaded only f
 
 Serverless handlers are stored in `backend/` and routed to `/api/*` via `vercel.json`.
 
+## Design
+
+Version 2 is a native-feeling mobile redesign: a floating tab bar (New trip / Overview / History),
+large iOS-style titles, bottom sheets for settings, trip detail and confirmations, a monthly cost chart,
+and a monochrome palette with one electric-blue accent. Light, dark and system themes are supported.
+Design tokens live at the top of `public/style.css`. The Inter font is self-hosted in `public/fonts`
+(SIL Open Font License) because the CSP blocks third-party origins.
+
 ## Stack
 
 - Frontend: vanilla HTML/CSS/JS

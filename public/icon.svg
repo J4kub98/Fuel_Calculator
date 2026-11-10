@@ -1,8 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- Pozadí — zaoblený čtverec v brand barvě -->
-  <rect width="512" height="512" rx="96" fill="#2563eb"/>
-  <!-- Kapka paliva — symbolizuje fuel calculator -->
-  <path d="M256 100 C256 100 160 230 160 300 C160 355 203 400 256 400 C309 400 352 355 352 300 C352 230 256 100 256 100 Z" fill="white" opacity="0.95"/>
-  <!-- Odlesk na kapce -->
-  <ellipse cx="230" cy="270" rx="20" ry="35" fill="white" opacity="0.3" transform="rotate(-20 230 270)"/>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4f8dff"/>
+      <stop offset="0.55" stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#1a3fbf"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.3" cy="0.12" r="0.75">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="drop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e6eeff"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="112" fill="url(#glow)"/>
+  <path d="M256 112c-22 31-104 128-104 204a104 104 0 0 0 208 0c0-76-82-173-104-204Z" fill="url(#drop)"/>
+  <path d="M206 318a50 50 0 0 0 46 50" fill="none" stroke="#2563eb" stroke-width="18" stroke-linecap="round" opacity="0.9"/>
 </svg>
