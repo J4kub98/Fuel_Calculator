@@ -114,6 +114,9 @@ describe('registrace', () => {
     expect(res.status).toHaveBeenCalledWith(200);
     const args = webauthn.generateRegistrationOptions.mock.calls[0][0];
     expect(args.rpID).toBe('fuel.example.com');
+    // Ve správci hesel je vidět celé ID (použitelné pro ruční import)
+    expect(args.userName).toBe(USER);
+    expect(new TextDecoder().decode(args.userID)).toBe(USER);
     expect(args.excludeCredentials).toEqual([{ id: 'existing', transports: ['internal'] }]);
     expect(args.authenticatorSelection.residentKey).toBe('required');
     expect(res.headers['Set-Cookie']).toContain('fuel_wa=');

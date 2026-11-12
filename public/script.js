@@ -294,6 +294,20 @@
     return data;
   }
 
+  // Klíče uložené dřív se ve správci hesel jmenovaly „Moje jízdy (xxxxxxxx)“.
+  // Kde to prohlížeč umí (Signal API), přejmenujeme je na celé ID zařízení.
+  let labelSignalled = false;
+  function updatePasskeyLabel() {
+    if (labelSignalled || !sessionUserId || typeof PublicKeyCredential.signalCurrentUserDetails !== 'function') return;
+    labelSignalled = true;
+    PublicKeyCredential.signalCurrentUserDetails({
+      rpId: window.location.hostname,
+      userId: b64urlEncode(new TextEncoder().encode(sessionUserId)),
+      name: sessionUserId,
+      displayName: 'Fuel Calculator',
+    }).catch(() => {});
+  }
+
   async function refreshPasskeyStatus() {
     if (!passkeySupported) return;
     try {
@@ -301,6 +315,7 @@
       if (!res.ok) return;
       const data = await res.json();
       passkeyCount = Number(data.count) || 0;
+      if (passkeyCount > 0) updatePasskeyLabel();
     } catch {
       // Offline — stav necháme beze změny
     }
@@ -376,6 +391,7 @@
       const result = await postJSON('/api/passkey/login/verify', credentialToJSON(credential));
 
       sessionUserId = result.userId;
+      labelSignalled = false;
       localStorage.setItem(LEGACY_USER_ID_KEY, sessionUserId);
       clearCachedTrips();
       await fetchTrips();
@@ -1347,7 +1363,16 @@
     });
 
     const handleImport = async () => {
-      const targetId = importInput.value.trim();
+      const raw = importInput.value.trim();
+      // Z vloženého textu vezmeme samotné ID (např. „Moje jízdy (550e8400-…)“)
+      const uuid = raw.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+      const targetId = uuid ? uuid[0].toLowerCase() : raw;
+
+      if (!uuid && /\([0-9a-f]{8}\)/i.test(raw)) {
+        showToast('To je jen název klíče. Použij „Obnovit z přístupového klíče“.', 'info');
+        $('btnPasskeyLogin').focus();
+        return;
+      }
 
       if (!targetId) {
         showToast('Vlož ID zařízení', 'error');
@@ -1387,7 +1412,9 @@
         refreshPasskeyStatus();
         showToast('ID importováno, data načtena');
       } catch (err) {
-        showToast((err && err.message) || 'Import se nepovedl', 'error');
+        showToast(/legacyUserId/i.test((err && err.message) || '')
+          ? 'Tohle není platné ID zařízení'
+          : ((err && err.message) || 'Import se nepovedl'), 'error');
       } finally {
         importButton.disabled = false;
         importButton.textContent = 'Importovat';

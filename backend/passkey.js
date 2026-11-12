@@ -110,14 +110,13 @@ async function registerOptions(req, res, rp) {
     return res.status(400).json({ error: 'Dosáhl jsi maximálního počtu přístupových klíčů' });
   }
 
-  // Jméno účtu, které uživatel uvidí ve správci hesel
-  const accountName = `Moje jízdy (${session.userId.slice(0, 8)})`;
-
+  // Ve správci hesel se klíč zobrazí pod celým ID zařízení, takže ho odtud
+  // jde zkopírovat a použít i pro ruční import.
   const options = await generateRegistrationOptions({
     rpName: RP_NAME,
     rpID: rp.rpID,
-    userName: accountName,
-    userDisplayName: accountName,
+    userName: session.userId,
+    userDisplayName: RP_NAME,
     userID: isoUint8Array.fromUTF8String(session.userId),
     attestationType: 'none',
     excludeCredentials: existing.map((row) => ({
