@@ -8,20 +8,20 @@
   <meta name="description" content="Kalkulátor spotřeby paliva a nákladů na jízdu">
 
   <!-- PWA -->
-  <link rel="manifest" href="/manifest.json?v=2.0.0-4">
+  <link rel="manifest" href="/manifest.json?v=2.0.0-5">
   <meta name="theme-color" content="#f2f2f4" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Fuel">
-  <link rel="icon" href="/icon.svg?v=2.0.0-4" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2.0.0-4">
+  <link rel="icon" href="/icon.svg?v=2.0.0-5" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2.0.0-5">
 
   <link rel="preload" href="/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="style.css?v=2.0.0-4">
+  <link rel="stylesheet" href="style.css?v=2.0.0-5">
   <!-- Nastaví motiv ještě před vykreslením, aby neproblikl světlý vzhled -->
-  <script src="theme.js?v=2.0.0-4"></script>
+  <script src="theme.js?v=2.0.0-5"></script>
 </head>
 
 <body>
@@ -90,9 +90,10 @@
 
     <!-- ── NOVÁ JÍZDA ── -->
     <section class="view is-active" id="view-entry" data-title="Nová jízda" aria-labelledby="entryTitle">
-      <h1 class="large-title" id="entryTitle" tabindex="-1">Nová jízda</h1>
+      <!-- Název obrazovky ukazuje horní lišta; nadpis zůstává pro čtečky -->
+      <h1 class="large-title visually-hidden" id="entryTitle" tabindex="-1">Nová jízda</h1>
 
-      <div class="hero" id="calcHero">
+      <div class="hero hero-entry" id="calcHero">
         <div class="hero-label">Náklady jízdy</div>
         <div class="amount amount-xl is-empty" id="resultCost"></div>
         <div class="hero-sub" id="resultSummary" aria-hidden="true"></div>
@@ -370,7 +371,7 @@
   </div>
   <div class="visually-hidden" data-sr-status role="status" aria-live="polite"></div>
 
-  <script src="script.js?v=2.0.0-4"></script>
+  <script src="script.js?v=2.0.0-5"></script>
 </body>
 
 </html>

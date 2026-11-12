@@ -262,7 +262,8 @@ html.has-sheet body {
   text-overflow: ellipsis;
 }
 
-.topbar.is-scrolled .topbar-title {
+.topbar.is-scrolled .topbar-title,
+.topbar.has-title .topbar-title {
   opacity: 1;
   transform: none;
 }
@@ -392,6 +393,15 @@ html.has-sheet body {
   align-items: center;
   text-align: center;
   padding: 12px 0 32px;
+}
+
+/* Obrazovka Jízda: název je v liště, výsledek vede s volným místem nad sebou */
+.hero-entry {
+  padding-top: 52px;
+}
+
+.hero-entry .amount-xl {
+  font-size: clamp(3rem, 21.5vw, 5.25rem);
 }
 
 .hero-start {

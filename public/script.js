@@ -550,6 +550,17 @@
     $('btnSave').classList.toggle('is-inactive', !ready);
   }
 
+  // Velká částka se zmenší jen tehdy, když by přetekla šířku obrazovky
+  function fitAmount(el) {
+    el.style.fontSize = '';
+    const max = el.parentElement.clientWidth;
+    const width = el.scrollWidth;
+    if (max && width > max) {
+      const size = parseFloat(getComputedStyle(el).fontSize);
+      el.style.fontSize = `${Math.floor(size * (max / width))}px`;
+    }
+  }
+
   // ── Calculate ──
   let liveTimer = null;
   function calculate() {
@@ -566,6 +577,7 @@
       costEl.classList.add('is-empty');
       costEl.innerHTML = amountHTML(0);
       costEl._value = 0;
+      fitAmount(costEl);
       const missing = [
         dist <= 0 && 'vzdálenost',
         cons <= 0 && 'spotřebu',
@@ -584,6 +596,7 @@
     costEl.classList.remove('is-empty');
     costEl.innerHTML = amountHTML(cost);
     costEl._value = cost;
+    fitAmount(costEl);
     summary.textContent = `${fmt(liters, 2)} l · ${fmt(perKm, 2)} Kč/km`;
 
     // Čtečkám oznámíme výsledek až po dopsání čísla
@@ -1299,6 +1312,8 @@
     const title = document.querySelector('.view.is-active .large-title');
     const threshold = title ? title.offsetTop + title.offsetHeight - 52 : 40;
     $('topbar').classList.toggle('is-scrolled', window.scrollY > Math.max(8, threshold));
+    // Na obrazovce Jízda nese název obrazovky lišta (velký nadpis tam není)
+    $('topbar').classList.toggle('has-title', activeView === 'entry');
   }
 
   // ── Nastavení ──
@@ -1543,6 +1558,7 @@
     }, { passive: true });
 
     window.addEventListener('hashchange', () => switchView(viewFromHash()));
+    window.addEventListener('resize', () => fitAmount($('resultCost')));
   }
 
   // ── Init ──
